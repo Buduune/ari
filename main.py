@@ -16,7 +16,9 @@ import logging
 import os
 import smtplib
 import ssl
+import threading
 import time
+from datetime import date
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 from html import escape
@@ -24,7 +26,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 log = logging.getLogger("invite")
 logging.basicConfig(level=logging.INFO)
@@ -48,19 +50,27 @@ class Reply(BaseModel):
     caved: bool = False
     website: str = Field(default="", max_length=200)  # honeypot: people never fill this
 
+    @field_validator("dateISO")
+    @classmethod
+    def _real_calendar_date(cls, value: str) -> str:
+        date.fromisoformat(value)  # raises ValueError for days like 2026-02-30
+        return value
+
 
 # A light brake so a stranger who finds the link can't flood your inbox.
 # (Best effort: serverless instances don't share memory.)
 _recent: list[float] = []
+_recent_lock = threading.Lock()  # sync endpoints run in a thread pool
 
 
 def _allow_send(limit: int = 8, window_s: int = 600) -> bool:
     now = time.time()
-    _recent[:] = [t for t in _recent if now - t < window_s]
-    if len(_recent) >= limit:
-        return False
-    _recent.append(now)
-    return True
+    with _recent_lock:
+        _recent[:] = [t for t in _recent if now - t < window_s]
+        if len(_recent) >= limit:
+            return False
+        _recent.append(now)
+        return True
 
 
 def _no_line(r: Reply) -> str:

@@ -1,0 +1,3 @@
+tests/
+pytest.ini
+requirements-dev.txt

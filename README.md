@@ -51,6 +51,25 @@ DRY_RUN=1 uvicorn main:app --reload
 http://127.0.0.1:8000 нээ. `DRY_RUN=1` үед имэйл явахгүй, оронд нь terminal дээр хэвлэгдэнэ.
 Жинхэнээр туршихдаа `DRY_RUN`-ийг аваад `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`-оо тохируул.
 
+## Тест
+
+```bash
+pip install -r requirements-dev.txt
+python -m playwright install chromium
+python -m pytest
+```
+
+Windows дээр `python`-ий оронд `py` гэж бич: `py -m pip install -r requirements-dev.txt`, `py -m playwright install chromium`, `py -m pytest`.
+
+| Файл | Юуг шалгадаг |
+|---|---|
+| `tests/test_api.py` | Backend: буруу хариуг татгалзах, имэйлийн агуулга, Gmail-ийн тохиргоо, спамын хязгаар. Жинхэнэ Gmail рүү юу ч явуулахгүй |
+| `tests/test_page.py` | Хуудасны текст, зургууд, өнгөний уншигдах байдал, хуудас backend-д яг хэрэгтэй талбаруудыг илгээж байгаа эсэх |
+| `tests/logic.test.mjs` | Судоку үргэлж ганц хариутай эсэх, нар жаргах цаг, цагийн формат. Node.js хэрэгтэй, `pytest` өөрөө ажиллуулна |
+| `tests/test_e2e.py` | Утасны хэмжээтэй Chromium дээр бүх урсгалыг эхнээс нь дуустал туулна |
+
+Node.js эсвэл Playwright суугаагүй бол тэр хэсэг нь алгасагдана, бусад нь ажиллана.
+
 ## Текст, зураг солих
 
 `web/index.html` доторх `DOORS` хэсэгт байгаа: гарчиг, teaser, төлөвлөгөө, сайтын линк, зургууд, зургийн credit.

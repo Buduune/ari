@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="only light">
 <meta name="robots" content="noindex, nofollow">
 <title>Hey</title>
 <meta property="og:title" content="Hey">
@@ -11,11 +12,12 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23ffb000'/%3E%3Crect x='10' y='6' width='12' height='21' fill='none' stroke='%23000' stroke-width='2'/%3E%3Ccircle cx='19' cy='17' r='1.5'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans:wght@300;400&display=swap">
-<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Noto+Sans:wght@300;400&amp;display=swap">
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@500&amp;display=swap">
 <style>
 /* ---------- Tokens ---------- */
 :root{
+  color-scheme:only light;
   --paper:#ffffff;
   --ink:#000000;
   --graphite:#5f5f5f;
@@ -152,7 +154,7 @@ img{display:block;max-width:100%}
 .gallery-cap{flex:1;min-width:0}
 .gallery-count{font-variant-numeric:tabular-nums}
 .gallery-nav{display:flex}
-.gallery-nav button{width:40px;height:40px;font-size:18px;display:grid;place-items:center}
+.gallery-nav button{width:44px;height:44px;font-size:18px;display:grid;place-items:center}
 .gallery-nav button:disabled{opacity:.3}
 .room-body{padding:32px var(--pad) 0}
 .room-teaser{font-size:15px;margin-bottom:12px}
@@ -186,7 +188,7 @@ img{display:block;max-width:100%}
 .room[data-world="bender"] .room-title{font-family:"Clash Display",var(--sans);font-weight:500;font-size:clamp(42px,12.2vw,78px);line-height:.98;letter-spacing:-.01em}
 .room[data-world="bender"] .room-plan{font-family:"Noto Sans",var(--sans);font-weight:300;color:#ececec}
 .room[data-world="bender"] .pill{border-radius:999px;text-transform:uppercase;font-family:"Noto Sans",var(--sans);font-weight:400;letter-spacing:.04em;border:1px solid rgba(255,255,255,.55)}
-.room[data-world="bender"] .pill-main{background:linear-gradient(180deg,#0e86bf,#0a6795);border-color:transparent;color:#fff}
+.room[data-world="bender"] .pill-main{background:linear-gradient(180deg,#0c7cb1,#0a6290);border-color:transparent;color:#fff}
 
 /* Door 3: quiet — fog paper, plum ink, one ginkgo-gold rule, a book typeface */
 .room[data-world="academic"]{background:#e8eaeb;color:#2a1a3b}
@@ -552,9 +554,15 @@ const MAX_DATE = addDays(TODAY, 120);
 const S = {
   page: 1, noAttempts: 0, caved: false,
   unlocked: false, opened: new Set(), puzzles: {},
-  chosen: null, date: null, time: null, otherMins: null,
-  view: { y: MIN_DATE.y, m: MIN_DATE.m }, sending: false
+  chosen: null, date: null, time: null, timeAuto: false, otherMins: null,
+  view: { y: MIN_DATE.y, m: MIN_DATE.m }, sending: false, busy: false
 };
+
+/* While the puzzle or a room is open, the page behind can't scroll or take focus. */
+function behindDialog(on) {
+  document.body.classList.toggle('is-locked', on);
+  $('#app').inert = on;
+}
 
 /* ================= Navigation ================= */
 const pages = [null, $('#p1'), $('#p2'), $('#p3'), $('#p4')];
@@ -690,7 +698,7 @@ doorsEl.innerHTML = DOORS.map((D, i) => `
   <li class="door-row${i === 1 ? ' is-flip' : ''}" data-door="${D.n}">
     <button class="door" type="button" data-door="${D.n}" aria-label="Door ${D.n}, ${esc(D.title)}. Locked.">
       <span class="door-frame">
-        <span class="door-view"><img alt="" data-src="${D.photos[0].src}" width="${D.photos[0].w}" height="${D.photos[0].h}" style="background:${D.photos[0].c}"></span>
+        <span class="door-view"><img alt="" data-src="${esc(D.photos[0].src)}" width="${+D.photos[0].w}" height="${+D.photos[0].h}" style="background:${esc(D.photos[0].c)}"></span>
         <span class="leaf">
           <span class="leaf-num" aria-hidden="true">${D.n}</span>
           <span class="leaf-panel a"></span><span class="leaf-panel b"></span>
@@ -722,17 +730,20 @@ function setDoorState(n) {
   btn.setAttribute('aria-label', 'Door ' + n + ', ' + D.title + '. ' + (open ? 'Open, show the plan.' : S.unlocked ? 'Unlocked.' : 'Locked.'));
 }
 async function swingOpen(n, thenRoom) {
-  preloadDoors();
-  S.opened.add(n);
-  const btn = doorBtn(n);
-  btn.classList.add('is-unlocked');
-  await wait(S.unlocked ? 120 : 0);
-  btn.classList.add('is-open');
-  setDoorState(n);
-  if (thenRoom) { await wait(1050); openRoom(n); }
+  S.busy = true; // a door is moving: ignore taps until the room is up
+  try {
+    preloadDoors();
+    S.opened.add(n);
+    const btn = doorBtn(n);
+    btn.classList.add('is-unlocked');
+    await wait(S.unlocked ? 120 : 0);
+    btn.classList.add('is-open');
+    setDoorState(n);
+    if (thenRoom) { await wait(1050); openRoom(n); }
+  } finally { S.busy = false; }
 }
 doorsEl.addEventListener('click', e => {
-  const btn = e.target.closest('.door'); if (!btn) return;
+  const btn = e.target.closest('.door'); if (!btn || S.busy) return;
   const n = +btn.dataset.door;
   if (S.opened.has(n)) openRoom(n);
   else if (S.unlocked) swingOpen(n, true);
@@ -754,13 +765,13 @@ function openSheet(n) {
   grid.classList.remove('is-solved');
   renderGrid();
   sheet.hidden = false;
-  document.body.classList.add('is-locked');
+  behindDialog(true);
   requestAnimationFrame(() => requestAnimationFrame(() => sheet.classList.add('is-in')));
   setTimeout(() => { const first = grid.querySelector('.cell:not([aria-disabled="true"])'); (first || $('#check')).focus({ preventScroll: true }); }, reduced ? 0 : 380);
 }
 function closeSheet() {
   sheet.classList.remove('is-in');
-  document.body.classList.remove('is-locked');
+  behindDialog(false);
   setTimeout(() => { sheet.hidden = true; }, reduced ? 0 : 420);
   if (P && !P.solved) { const b = doorBtn(P.n); if (b) b.focus({ preventScroll: true }); }
 }
@@ -815,6 +826,7 @@ $('#hint').addEventListener('click', () => {
 });
 async function solved() {
   P.solved = true;
+  S.busy = true;
   const n = P.n;
   grid.classList.add('is-solved');
   sheetMsg.textContent = 'Open.';
@@ -832,14 +844,15 @@ async function solved() {
 /* ================= Room ================= */
 const room = $('#room'), roomIn = $('#roomIn');
 function openRoom(n) {
+  if (!room.hidden && room.classList.contains('is-in') && +room.dataset.door === n) return; // already showing
   const D = DOORS[n - 1];
   room.dataset.world = D.world;
   room.dataset.door = n;
   const shots = D.photos.map((p, i) => `
       <figure class="shot">
-        <img class="shot-img" src="${p.src}" alt="${esc(p.cap)}" width="${p.w}" height="${p.h}" style="background:${p.c}" ${i ? 'loading="lazy"' : ''} decoding="async">
+        <img class="shot-img" src="${esc(p.src)}" alt="${esc(p.cap)}" width="${+p.w}" height="${+p.h}" style="background:${esc(p.c)}" ${i ? 'loading="lazy"' : ''} decoding="async">
       </figure>`).join('');
-  const credits = D.photos.map(p => `<li>“<a href="${p.url}" target="_blank" rel="noopener">${esc(p.t)}</a>” by ${esc(p.by)}, <a href="${p.licUrl}" target="_blank" rel="noopener">${esc(p.lic)}</a>. Resized and cropped.</li>`).join('');
+  const credits = D.photos.map(p => `<li>“<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.t)}</a>” by ${esc(p.by)}, <a href="${esc(p.licUrl)}" target="_blank" rel="noopener">${esc(p.lic)}</a>. Resized and cropped.</li>`).join('');
   roomIn.innerHTML = `
     <p class="room-tag">Door ${n}</p>
     <div class="gallery">
@@ -860,7 +873,7 @@ function openRoom(n) {
       <p class="room-plan">${esc(D.plan)}</p>
       <div class="room-actions">
         <button class="pill pill-main" type="button" id="choose">Choose one</button>
-        ${D.link ? `<a class="pill" href="${D.link.href}" target="_blank" rel="noopener">${esc(D.link.label)}</a>` : ''}
+        ${D.link ? `<a class="pill" href="${esc(D.link.href)}" target="_blank" rel="noopener">${esc(D.link.label)}</a>` : ''}
       </div>
       <details class="credits"><summary>Photo credits</summary><ul>${credits}</ul></details>
     </div>`;
@@ -879,14 +892,14 @@ function openRoom(n) {
 
   room.hidden = false;
   room.scrollTop = 0;
-  document.body.classList.add('is-locked');
+  behindDialog(true);
   requestAnimationFrame(() => requestAnimationFrame(() => room.classList.add('is-in')));
   setTimeout(() => $('#roomClose').focus({ preventScroll: true }), reduced ? 0 : 300);
 }
 function closeRoom() {
   const n = +room.dataset.door;
   room.classList.remove('is-in');
-  document.body.classList.remove('is-locked');
+  behindDialog(false);
   setTimeout(() => { room.hidden = true; roomIn.innerHTML = ''; }, reduced ? 0 : 420);
   const b = doorBtn(n); if (b && S.page === 2) b.focus({ preventScroll: true });
 }
@@ -926,8 +939,9 @@ function setupWhen() {
   const D = DOORS[S.chosen - 1];
   $('#pickedNum').textContent = D.n;
   $('#pickedName').textContent = 'Door ' + D.n + ' — ' + D.title;
-  if (S.time && !allowed(S.time)) S.time = null;
-  if (D.only && !S.time) S.time = D.only;
+  // A time we picked for her (Door 1's 2pm) shouldn't follow her to another door; her own pick should.
+  if (S.time && (S.timeAuto || !allowed(S.time))) { S.time = null; S.timeAuto = false; }
+  if (D.only && !S.time) { S.time = D.only; S.timeAuto = true; }
   if (S.time === 'other' && S.otherMins != null && !inRange(S.otherMins)) { /* keep, the note will explain */ }
   otherTime.min = toHHMM(D.range[0]); otherTime.max = toHHMM(D.range[1]);
   renderChips(); renderCal(); updateSend();
@@ -960,15 +974,19 @@ function renderNote() {
 chipsEl.addEventListener('click', e => {
   const c = e.target.closest('.chip'); if (!c || c.disabled) return;
   S.time = c.dataset.kind;
+  S.timeAuto = false;
   renderChips();
   if (S.time === 'other') { otherTime.focus(); if (otherTime.showPicker) { try { otherTime.showPicker(); } catch (err) { /* not allowed here */ } } }
   updateSend();
 });
-otherTime.addEventListener('input', () => {
+function readOtherTime() {
   const v = otherTime.value;
   if (/^\d{2}:\d{2}/.test(v)) { const [h, m] = v.split(':').map(Number); S.otherMins = h * 60 + m; } else S.otherMins = null;
   renderNote(); updateSend();
-});
+}
+// iOS time wheels may only fire `change`, desktop browsers fire `input` as you type
+otherTime.addEventListener('input', readOtherTime);
+otherTime.addEventListener('change', readOtherTime);
 
 const calGrid = $('#calGrid'), calMonth = $('#calMonth'), calPrev = $('#calPrev'), calNext = $('#calNext');
 function renderCal() {
@@ -1078,8 +1096,10 @@ function tick() {
   if (!raf) cx.clearRect(0, 0, innerWidth, innerHeight);
 }
 
-/* expose for local testing only */
-window.__invite = { S, DOORS, goldenStart, sunsetLocal, makePuzzle, countSolutions };
+/* Hook for the automated tests. Only on localhost: it holds the puzzle answers. */
+if (/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) {
+  window.__invite = { S, DOORS, goldenStart, sunsetLocal, makePuzzle, countSolutions };
+}
 })();
 </script>
 </body>
