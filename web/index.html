@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="robots" content="noindex, nofollow">
+<title>Hey</title>
+<meta property="og:title" content="Hey">
+<meta property="og:description" content="A small question.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23ffb000'/%3E%3Crect x='10' y='6' width='12' height='21' fill='none' stroke='%23000' stroke-width='2'/%3E%3Ccircle cx='19' cy='17' r='1.5'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans:wght@300;400&display=swap">
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@500&display=swap">
+<style>
+/* ---------- Tokens ---------- */
+:root{
+  --paper:#ffffff;
+  --ink:#000000;
+  --graphite:#5f5f5f;
+  --mist:#f0f0f0;
+  --sun:#ffb000;          /* golden hour: the one accent */
+  --err:#d12f00;
+  --pad:20px;
+  --max:1120px;
+  --sans:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --swing:cubic-bezier(.62,0,.24,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+*{margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--sans);font-size:17px;line-height:1.45;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overflow-x:hidden;min-height:100vh;min-height:100dvh}
+body.is-locked{overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{background:none;border:0;border-radius:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-appearance:none;appearance:none;text-align:inherit}
+button:disabled{cursor:default}
+a{color:inherit}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Pages ---------- */
+.page{display:none;flex-direction:column;position:relative;width:100%;max-width:var(--max);margin:0 auto;min-height:100vh;min-height:100dvh;
+  padding:calc(env(safe-area-inset-top) + 18px) calc(env(safe-area-inset-right) + var(--pad)) calc(env(safe-area-inset-bottom) + 28px) calc(env(safe-area-inset-left) + var(--pad))}
+.page.is-active{display:flex}
+.page.is-entering{animation:enter .5s var(--ease) both}
+@keyframes enter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.folio{font-size:13px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:.01em;min-height:20px}
+.display{font-weight:700;font-stretch:86%;letter-spacing:-.05em;word-spacing:.09em;line-height:.88}
+
+/* ---------- 1 · The ask ---------- */
+.p1 .ask{margin:auto 0;padding:56px 0 36px}
+.hello{font-size:clamp(19px,5.4vw,28px);font-weight:500;letter-spacing:-.015em;line-height:1.2;margin-bottom:clamp(14px,3vw,24px)}
+.question{font-size:clamp(58px,19.5vw,168px)}
+.question span{display:block}
+.answers{display:flex;align-items:flex-end;gap:12px;min-height:160px}
+.btn-yes{display:block;background:var(--sun);color:var(--ink);font-size:22px;font-weight:800;letter-spacing:.04em;padding:22px 40px;transform-origin:0 100%;transition:transform .5s var(--ease)}
+.btn-no{display:block;border:2px solid var(--ink);background:var(--paper);font-size:17px;font-weight:700;letter-spacing:.04em;padding:16px 22px;white-space:nowrap;transform-origin:0 0;
+  transition:left .45s var(--ease),top .45s var(--ease),transform .35s var(--ease),background-color .3s,color .3s}
+.btn-no.is-loose{position:fixed;z-index:20;margin:0}
+.btn-no.is-caved{background:var(--ink);color:var(--paper);letter-spacing:0;font-weight:600}
+
+/* ---------- 2 · Doors ---------- */
+.p2 .head{margin-top:clamp(36px,9vh,90px)}
+.title{font-size:clamp(46px,13.5vw,100px)}
+.lede{font-size:clamp(19px,5vw,26px);font-weight:500;letter-spacing:-.015em;line-height:1.2;margin-top:14px;max-width:19ch}
+.doors{list-style:none;display:grid;gap:56px;margin:52px 0 32px}
+.door-row{display:grid;grid-template-columns:minmax(0,57%) minmax(0,1fr);column-gap:18px;align-items:end}
+.door-row.is-flip{grid-template-columns:minmax(0,1fr) minmax(0,57%)}
+.door-row.is-flip .door{order:2}
+.door{position:relative;display:block;width:100%;aspect-ratio:5/8;perspective:1400px}
+.door-frame{position:absolute;inset:0;border:2px solid var(--ink);transform-style:preserve-3d}
+.door-view{position:absolute;inset:1px;overflow:hidden;background:#1b1b1b}
+.door-view img{width:100%;height:100%;object-fit:cover;transform:scale(1.14);transition:transform 2s var(--ease)}
+.door.is-open .door-view img{transform:scale(1)}
+.leaf{position:absolute;inset:0;background:var(--paper);transform-origin:0 50%;transition:transform 1.2s var(--swing),box-shadow .2s;will-change:transform}
+.door.is-open .leaf{transform:rotateY(-100deg);box-shadow:inset 0 0 0 2px var(--ink)}
+.door.is-open .leaf-num{opacity:0;transition:opacity .3s .25s}
+@media (max-width:859px){
+  /* the right-hand door hinges on the right, so it swings toward the screen edge, away from its text */
+  .door-row.is-flip .leaf{transform-origin:100% 50%}
+  .door-row.is-flip .door.is-open .leaf{transform:rotateY(100deg)}
+  .door-row.is-flip .knob{right:auto;left:9%}
+  .door-row.is-flip .lock{right:auto;left:calc(9% - 7px)}
+}
+.leaf-num{position:absolute;left:10px;top:2px;font-size:clamp(72px,21vw,120px);font-weight:600;font-stretch:86%;letter-spacing:-.06em;line-height:1}
+.leaf-panel{position:absolute;left:16%;right:16%;border:1.5px solid var(--ink)}
+.leaf-panel.a{top:37%;height:19%}
+.leaf-panel.b{top:61%;height:28%}
+.knob{position:absolute;right:9%;top:50%;width:11px;height:11px;margin-top:-6px;border-radius:50%;background:var(--ink)}
+.lock{position:absolute;right:calc(9% - 7px);top:calc(50% + 16px);width:25px;height:31px;overflow:visible;transition:opacity .45s .55s,transform .45s .55s}
+.lock .shackle{transition:transform .5s var(--ease)}
+.door.is-unlocked .lock .shackle{transform:translateY(-6px)}
+.door.is-unlocked .lock{opacity:0;transform:translateY(8px)}
+.door-text{padding-bottom:4px}
+.door-title{font-size:clamp(21px,5.6vw,28px);font-weight:700;font-stretch:92%;letter-spacing:-.025em;line-height:1.05}
+.door-teaser{font-size:16px;color:var(--graphite);margin-top:6px;line-height:1.3}
+.door-state{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;margin-top:16px}
+.door-state::before{content:"";width:7px;height:7px;background:var(--ink);flex:none}
+.door-row.is-unlocked .door-state::before{background:var(--sun)}
+.door-row.is-open .door-state::before{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.vanish{animation:vanish 3.6s ease-in-out infinite}
+@keyframes vanish{0%,35%{opacity:1}50%,78%{opacity:0}92%,100%{opacity:1}}
+
+/* ---------- Puzzle sheet ---------- */
+.sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.42);opacity:0;transition:opacity .3s}
+.sheet-card{position:relative;width:100%;max-width:460px;max-height:100%;overflow-y:auto;background:var(--paper);border-top:2px solid var(--ink);
+  padding:16px var(--pad) calc(env(safe-area-inset-bottom) + 24px);transform:translateY(105%);transition:transform .42s var(--ease)}
+.sheet.is-in .scrim{opacity:1}
+.sheet.is-in .sheet-card{transform:none}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.sheet-door{font-size:13px;font-weight:500}
+.x{width:44px;height:44px;display:grid;place-items:center;font-size:26px;line-height:1;margin-right:-12px}
+.sheet-title{font-size:clamp(30px,8.5vw,40px);margin-top:2px}
+.sheet-rule{font-size:15px;color:var(--graphite);margin-top:10px;max-width:32ch;line-height:1.35}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);width:min(100%,312px);aspect-ratio:1;border:3px solid var(--ink);margin:20px 0 18px}
+.cell{display:flex;align-items:center;justify-content:center;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink);font-size:30px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1;transition:background-color .25s}
+.cell:nth-child(4n){border-right:0}
+.cell:nth-child(4n+2){border-right-width:3px}
+.cell:nth-child(n+5):nth-child(-n+8){border-bottom-width:3px}
+.cell:nth-child(n+13){border-bottom:0}
+.cell.is-given{background:var(--mist);font-weight:700}
+.cell.is-hint{background:var(--sun);font-weight:700}
+.cell.is-wrong{color:var(--err);animation:shake .32s}
+.grid.is-solved .cell{background:var(--sun);transition-delay:calc(var(--i) * 28ms)}
+@keyframes shake{25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.sheet-actions{display:flex;align-items:center;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 24px;font-size:17px;font-weight:700;border:2px solid var(--ink)}
+.btn-dark{background:var(--ink);color:var(--paper)}
+.btn-plain{border-color:transparent;font-weight:500;text-decoration:underline;text-underline-offset:4px;padding:0 12px}
+.sheet-msg{min-height:24px;margin-top:14px;font-size:15px;font-weight:600}
+@media (min-width:700px){.sheet{align-items:center}.sheet-card{border:2px solid var(--ink);padding-bottom:28px}}
+
+/* ---------- Room (the plan behind each door) ---------- */
+.room{position:fixed;inset:0;z-index:50;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;opacity:0;transform:translateY(40px);transition:opacity .35s ease,transform .5s var(--ease)}
+.room[hidden]{display:none}
+.room.is-in{opacity:1;transform:none}
+.room-in{max-width:780px;margin:0 auto;padding-bottom:calc(env(safe-area-inset-bottom) + 56px)}
+.room-close{position:fixed;z-index:4;top:calc(env(safe-area-inset-top) + 10px);right:calc(env(safe-area-inset-right) + 12px);width:44px;height:44px;display:grid;place-items:center;font-size:24px;line-height:1}
+.room-tag{padding:calc(env(safe-area-inset-top) + 22px) var(--pad) 14px;font-size:13px;font-weight:500}
+.gallery{position:relative}
+.track{display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;-ms-overflow-style:none}
+.track::-webkit-scrollbar{display:none}
+.shot{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}
+.shot-img{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover}
+.gallery-bar{display:flex;align-items:center;gap:12px;min-height:44px;padding:4px var(--pad) 0;font-size:13px}
+.gallery-cap{flex:1;min-width:0}
+.gallery-count{font-variant-numeric:tabular-nums}
+.gallery-nav{display:flex}
+.gallery-nav button{width:40px;height:40px;font-size:18px;display:grid;place-items:center}
+.gallery-nav button:disabled{opacity:.3}
+.room-body{padding:32px var(--pad) 0}
+.room-teaser{font-size:15px;margin-bottom:12px}
+.room-title{font-size:clamp(42px,12vw,80px);font-weight:700;line-height:.95}
+.room-rule{display:none}
+.room-plan{margin-top:22px;font-size:18px;line-height:1.5;max-width:34em}
+.room-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:32px}
+.pill{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 26px;font-size:16px;font-weight:600;text-decoration:none;border:1.5px solid currentColor}
+.credits{margin-top:48px;font-size:12px;line-height:1.5;opacity:.8}
+.credits summary{cursor:pointer;font-weight:500;padding:6px 0}
+.credits ul{list-style:none}
+.credits li{margin-top:6px}
+
+/* Door 1: the MoPOP world — grey grain paper, black blocks, wide heavy caps, hot pink */
+.room[data-world="stage"]{background-color:#ececec;color:#000;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.room[data-world="stage"] .room-close{background:#000;color:#fff;border-radius:50%}
+.room[data-world="stage"] .gallery{background:#000;color:#fff;padding-bottom:6px}
+.room[data-world="stage"] .room-teaser{font-weight:700;text-transform:uppercase;letter-spacing:.02em}
+.room[data-world="stage"] .room-title{font-stretch:125%;font-weight:900;text-transform:uppercase;font-size:clamp(34px,10.4vw,72px);line-height:.94;letter-spacing:-.005em}
+.room[data-world="stage"] .room-title::after{content:"";display:block;width:min(100%,260px);height:3px;background:#e4002b;margin-top:14px}
+.room[data-world="stage"] .pill{border-radius:999px;text-transform:uppercase;font-weight:500;letter-spacing:.01em}
+.room[data-world="stage"] .pill-main{background:#f662cf;border-color:#000}
+
+/* Door 2: the Museum of Illusions world — charcoal, thin blue lattice, steel-blue pills */
+.room[data-world="bender"]{background-color:#1c1c1c;color:#fff;
+  background-image:radial-gradient(120% 60% at 50% 0%,rgba(12,124,177,.22),rgba(12,124,177,0) 62%),url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='380'%3E%3Cpath d='M0 0L220 380M220 0L0 380M110 0V380' fill='none' stroke='%230c7cb1' stroke-opacity='.3' stroke-width='1.2'/%3E%3C/svg%3E")}
+.room[data-world="bender"] .room-close{background:rgba(0,0,0,.55);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:50%}
+.room[data-world="bender"] .room-tag,.room[data-world="bender"] .gallery-bar{font-family:"Noto Sans",var(--sans);font-weight:300;letter-spacing:.02em}
+.room[data-world="bender"] .room-teaser{font-family:"Noto Sans",var(--sans);font-weight:300;text-transform:uppercase;letter-spacing:.07em;color:#d0cece}
+.room[data-world="bender"] .room-title{font-family:"Clash Display",var(--sans);font-weight:500;font-size:clamp(42px,12.2vw,78px);line-height:.98;letter-spacing:-.01em}
+.room[data-world="bender"] .room-plan{font-family:"Noto Sans",var(--sans);font-weight:300;color:#ececec}
+.room[data-world="bender"] .pill{border-radius:999px;text-transform:uppercase;font-family:"Noto Sans",var(--sans);font-weight:400;letter-spacing:.04em;border:1px solid rgba(255,255,255,.55)}
+.room[data-world="bender"] .pill-main{background:linear-gradient(180deg,#0e86bf,#0a6795);border-color:transparent;color:#fff}
+
+/* Door 3: quiet — fog paper, plum ink, one ginkgo-gold rule, a book typeface */
+.room[data-world="academic"]{background:#e8eaeb;color:#2a1a3b}
+.room[data-world="academic"] .room-close{color:#2a1a3b;background:#e8eaeb;border-radius:50%}
+.room[data-world="academic"] .room-tag{font-family:"EB Garamond",serif;font-size:16px;font-style:italic}
+.room[data-world="academic"] .gallery{padding:0 var(--pad)}
+.room[data-world="academic"] .gallery-bar{padding:4px 0 0;font-family:"EB Garamond",serif;font-style:italic;font-size:16px}
+.room[data-world="academic"] .room-body{padding-top:48px}
+.room[data-world="academic"] .room-teaser{font-family:"EB Garamond",serif;font-style:italic;font-size:22px;margin-bottom:6px}
+.room[data-world="academic"] .room-title{font-family:"EB Garamond",serif;font-weight:400;font-size:clamp(54px,16vw,104px);line-height:.92;letter-spacing:-.015em}
+.room[data-world="academic"] .room-rule{display:block;width:56px;height:1px;background:#b98b2f;margin-top:26px}
+.room[data-world="academic"] .room-plan{font-family:"EB Garamond",serif;font-size:22px;line-height:1.55;margin-top:22px}
+.room[data-world="academic"] .pill{font-family:"EB Garamond",serif;font-size:19px;font-weight:500;border-width:1px}
+.room[data-world="academic"] .pill-main{background:#2a1a3b;color:#e8eaeb;border-color:#2a1a3b}
+
+/* ---------- 3 · When ---------- */
+.p3 .head{margin-top:clamp(28px,6vh,64px)}
+.picked{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center;border:2px solid var(--ink);padding:12px 6px 12px 14px;margin:26px 0 34px}
+.picked-num{font-size:46px;font-weight:600;font-stretch:86%;letter-spacing:-.05em;line-height:.8}
+.picked-label{font-size:13px;color:var(--graphite)}
+.picked-name{font-size:17px;font-weight:600;line-height:1.25}
+.link{font-size:15px;text-decoration:underline;text-underline-offset:4px;min-height:44px;padding:0 10px}
+.field{border:0;margin:0 0 34px;min-width:0}
+label.field{display:block}
+[tabindex="-1"]:focus{outline:none}
+.legend{display:block;font-size:13px;font-weight:600;margin-bottom:10px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.cal-month{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.cal-navs{display:flex;gap:8px}
+.cal-nav{width:44px;height:44px;border:2px solid var(--ink);font-size:18px;display:grid;place-items:center}
+.cal-nav:disabled{border-color:#d4d4d4;color:#c4c4c4}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-top:2px solid var(--ink);border-left:1px solid var(--ink)}
+.cal-grid>*{border-right:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.cal-dow{font-size:12px;font-weight:500;color:var(--graphite);text-align:center;padding:6px 0}
+.cal-day{aspect-ratio:1;display:grid;place-items:center;font-size:16px;font-variant-numeric:tabular-nums}
+.cal-day:disabled{color:#c2c2c2}
+.cal-day.is-sel{background:var(--ink);color:var(--paper);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--ink);min-height:48px;padding:0 14px;font-size:16px;font-weight:500;display:inline-flex;align-items:center;gap:8px}
+.chip.is-sel{background:var(--sun);font-weight:700}
+.chip:disabled{border-color:#d4d4d4;color:#b5b5b5;text-decoration:line-through}
+.chip.is-suggested::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--sun);flex:none}
+.chip.is-suggested.is-sel::after{background:var(--ink)}
+.time-note{font-size:15px;margin-top:12px;line-height:1.35}
+.time-note:empty{display:none}
+.time-note small{display:block;font-size:13px;color:var(--graphite);margin-top:4px}
+.other{margin-top:12px}
+.other[hidden]{display:none}
+.other input{border:2px solid var(--ink);border-radius:0;background:var(--paper);min-height:50px;padding:0 12px;font-size:17px;-webkit-appearance:none;appearance:none}
+.hint{display:block;font-size:14px;color:var(--graphite);margin:-6px 0 10px}
+textarea{display:block;width:100%;min-height:104px;border:2px solid var(--ink);border-radius:0;background:var(--paper);padding:12px;font-size:16px;line-height:1.4;resize:vertical;-webkit-appearance:none;appearance:none}
+.btn-send{display:block;width:100%;min-height:64px;padding:0 20px;text-align:left;background:var(--ink);color:var(--paper);font-size:21px;font-weight:700;letter-spacing:-.01em;transition:background-color .2s,color .2s}
+.btn-send:disabled{background:#e6e6e6;color:#a0a0a0}
+.send-status{min-height:22px;margin-top:12px;font-size:15px;font-weight:500}
+
+/* ---------- 4 · Done ---------- */
+.p4{justify-content:center;align-items:center;text-align:center;overflow:hidden}
+.done{position:relative;z-index:1;padding-bottom:18vh}
+.pleasure{font-size:clamp(62px,18vw,160px)}
+.see{font-size:clamp(18px,4.8vw,24px);font-weight:500;letter-spacing:-.01em;margin-top:22px}
+.sun{position:absolute;left:50%;bottom:0;width:min(128vw,880px);aspect-ratio:1;border-radius:50%;background:var(--sun);transform:translate(-50%,64%)}
+.p4.is-entering .sun{animation:rise 1.8s var(--ease) both}
+@keyframes rise{from{transform:translate(-50%,100%)}to{transform:translate(-50%,64%)}}
+
+/* ---------- Confetti ---------- */
+#confetti{position:fixed;inset:0;z-index:80;pointer-events:none;width:100%;height:100%}
+
+/* ---------- Wider screens ---------- */
+@media (min-width:860px){
+  :root{--pad:40px}
+  .doors{grid-template-columns:repeat(3,minmax(0,1fr));gap:36px;align-items:start}
+  .door-row,.door-row.is-flip{grid-template-columns:1fr;row-gap:16px}
+  .door-row.is-flip .door{order:0}
+  .p3 .when{max-width:560px}
+  .room-body{padding-left:40px;padding-right:40px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important}
+}
+</style>
+</head>
+<body>
+<noscript><p style="padding:24px;font:17px/1.4 sans-serif">This page needs JavaScript turned on.</p></noscript>
+
+<main id="app">
+  <!-- 1 · The ask -->
+  <section class="page p1 is-active" id="p1" aria-labelledby="q1">
+    <p class="folio">1/4</p>
+    <div class="ask">
+      <p class="hello">Hey, nice to see you again</p>
+      <h1 class="question display" id="q1"><span>Would you</span><span>meet me?</span></h1>
+    </div>
+    <div class="answers">
+      <button class="btn-yes" id="yes" type="button">YES</button>
+      <button class="btn-no" id="no" type="button">NO</button>
+    </div>
+  </section>
+
+  <!-- 2 · Doors -->
+  <section class="page p2" id="p2" aria-labelledby="q2">
+    <p class="folio">2/4</p>
+    <div class="head">
+      <h2 class="title display" id="q2">Pick a door.</h2>
+      <p class="lede">Each one’s a different kind of day.</p>
+    </div>
+    <ol class="doors" id="doors"></ol>
+  </section>
+
+  <!-- 3 · When -->
+  <section class="page p3" id="p3" aria-labelledby="q3">
+    <p class="folio">3/4</p>
+    <div class="when">
+      <div class="head"><h2 class="title display" id="q3">When?</h2></div>
+
+      <div class="picked">
+        <span class="picked-num" id="pickedNum">1</span>
+        <div>
+          <p class="picked-label">You picked:</p>
+          <p class="picked-name" id="pickedName"></p>
+        </div>
+        <button class="link" id="change" type="button">Change</button>
+      </div>
+
+      <fieldset class="field">
+        <legend class="legend">Date</legend>
+        <div class="cal-head">
+          <p class="cal-month" id="calMonth" aria-live="polite"></p>
+          <div class="cal-navs">
+            <button class="cal-nav" id="calPrev" type="button" aria-label="Previous month">‹</button>
+            <button class="cal-nav" id="calNext" type="button" aria-label="Next month">›</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="calGrid" role="group" aria-label="Calendar"></div>
+      </fieldset>
+
+      <fieldset class="field">
+        <legend class="legend">Time</legend>
+        <div class="chips" id="chips" role="radiogroup" aria-label="Time"></div>
+        <div class="other" id="other" hidden>
+          <label class="sr" for="otherTime">Pick a time</label>
+          <input type="time" id="otherTime" step="900">
+        </div>
+        <p class="time-note" id="timeNote" aria-live="polite"></p>
+      </fieldset>
+
+      <label class="field" for="note">
+        <span class="legend">Anything you want me to know?</span>
+        <span class="hint">(food, allergies, what to wear…)</span>
+        <textarea id="note" maxlength="600" rows="4"></textarea>
+      </label>
+
+      <button class="btn-send" id="send" type="button" disabled>Send it</button>
+      <p class="send-status" id="sendStatus" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- 4 · Done -->
+  <section class="page p4" id="p4" aria-labelledby="q4">
+    <div class="done">
+      <h2 class="pleasure display" id="q4">My pleasure.</h2>
+      <p class="see" id="see"></p>
+    </div>
+    <div class="sun" aria-hidden="true"></div>
+  </section>
+</main>
+
+<!-- Puzzle sheet -->
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="scrim" data-close></div>
+  <div class="sheet-card">
+    <div class="sheet-head">
+      <p class="sheet-door" id="sheetDoor">Door 1</p>
+      <button class="x" type="button" data-close aria-label="Close">×</button>
+    </div>
+    <h3 class="sheet-title display" id="sheetTitle">Solve to open.</h3>
+    <p class="sheet-rule">Each row, column and box gets 1, 2, 3 and 4. Tap a square to change its number.</p>
+    <div class="grid" id="grid" role="group" aria-label="Puzzle"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-dark" id="check" type="button">Check</button>
+      <button class="btn btn-plain" id="hint" type="button">Hint</button>
+    </div>
+    <p class="sheet-msg" id="sheetMsg" aria-live="polite"></p>
+  </div>
+</div>
+
+<!-- Room: what's behind a door -->
+<div class="room" id="room" role="dialog" aria-modal="true" aria-labelledby="roomTitle" hidden>
+  <button class="room-close" id="roomClose" type="button" aria-label="Back to the doors">×</button>
+  <div class="room-in" id="roomIn"></div>
+</div>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= Content ================= */
+const DOORS = [
+  {
+    n: 1, world: 'stage', title: 'The Stage', teaser: 'Music',
+    plan: 'Museum of Pop Culture (MoPOP) at Seattle Center. We wander the music and sci-fi exhibits, then head to the Sound Lab where we grab instruments, hit the booths. Encouraged, even. Afterward, a walk around Seattle Center with the Space Needle lit up above us.',
+    link: { href: 'https://www.mopop.org/', label: 'mopop.org ↗' },
+    only: 'afternoon', onlyNote: 'MoPOP closes at 5.',
+    range: [600, 900], rangeNote: 'MoPOP is open 10am–5pm, so start by 3pm.',
+    confetti: ['#000000', '#f662cf', '#0084eb', '#ffb000'],
+    photos: [
+      { src: 'img/d1-1.jpg', w: 1024, h: 551, c: '#7c7497', cap: 'MoPOP and the Space Needle', t: 'space needle night 2A', by: 'Tony in WA', url: 'https://www.flickr.com/photos/32146215@N06/3543114405', lic: 'CC BY-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-sa/2.0/' },
+      { src: 'img/d1-2.jpg', w: 1024, h: 768, c: '#2b2a26', cap: 'The Sound Lab', t: 'EMP Sound Lab - Guitar', by: 'razvan.orendovici', url: 'https://www.flickr.com/photos/24468935@N03/4169696329', lic: 'CC BY 2.0', licUrl: 'https://creativecommons.org/licenses/by/2.0/' },
+      { src: 'img/d1-3.jpg', w: 1024, h: 733, c: '#7f3263', cap: 'MoPOP, up close', t: 'Experience Music Project, Seattle', by: 'bluebrightly', url: 'https://www.flickr.com/photos/33541799@N00/7933233338', lic: 'CC BY 2.0', licUrl: 'https://creativecommons.org/licenses/by/2.0/' },
+      { src: 'img/d1-4.jpg', w: 1024, h: 683, c: '#2b1f16', cap: 'The Space Needle at night', t: 'Seattle', by: 'Ian Sane', url: 'https://www.flickr.com/photos/31246066@N04/3555445395', lic: 'CC BY 2.0', licUrl: 'https://creativecommons.org/licenses/by/2.0/' }
+    ]
+  },
+  {
+    n: 2, world: 'bender', title: 'The Mind-Bender', teaser: 'Now you see me. No',
+    plan: 'Museum of Illusions. Upside-down rooms, shrinking rooms, and way too many photos of us looking ridiculous. Then we warm up with coffee at Starbucks near Pike Place, sit by the window, and compare who fell for more illusions.',
+    link: { href: 'https://moiseattle.com/', label: 'moiseattle.com ↗' },
+    range: [600, 1200], rangeNote: 'Museum of Illusions is open 10am–9pm (10pm Fri–Sat).',
+    confetti: ['#1c1c1c', '#0c7cb1', '#7fc8ea', '#ffb000'],
+    photos: [
+      { src: 'img/d2-1.jpg', w: 1024, h: 768, c: '#675993', cap: 'A vortex tunnel', t: 'Vortex Tunnel', by: 'Graeme Pow', url: 'https://www.flickr.com/photos/32280754@N05/26678780085', lic: 'CC BY-NC-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-nc-sa/2.0/' },
+      { src: 'img/d2-2.jpg', w: 1024, h: 768, c: '#574742', cap: 'An Ames room', t: '5211 Ames Room interior', by: 'crazyscot', url: 'https://www.flickr.com/photos/65112820@N00/5544376673', lic: 'CC BY-NC-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-nc-sa/2.0/' },
+      { src: 'img/d2-3.jpg', w: 1024, h: 658, c: '#462f28', cap: 'Pike Place Market', t: 'Pike Place Market sign at sunset', by: 'SounderBruce', url: 'https://www.flickr.com/photos/70175722@N04/24922643826', lic: 'CC BY-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-sa/2.0/' },
+      { src: 'img/d2-4.jpg', w: 1024, h: 686, c: '#3f2614', cap: 'Pike Place, after rain', t: 'Red brick road', by: 'Diueine', url: 'https://www.flickr.com/photos/51035794942@N01/5250227919', lic: 'CC BY-NC-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-nc-sa/2.0/' }
+    ]
+  },
+  {
+    n: 3, world: 'academic', title: 'Academic', teaser: 'Poetry autumn',
+    plan: 'University of Washington campus tour, talking about Russian literature, Japanese haiku, writing poems together.',
+    link: null,
+    suggest: 'golden', suggestNote: 'Sunset’s the whole point of this one 🌅',
+    range: [420, 1260], rangeNote: 'Pick something between 7am and 9pm.',
+    confetti: ['#2a1a3b', '#b98b2f', '#000000', '#ffb000'],
+    photos: [
+      { src: 'img/d3-1.jpg', w: 1024, h: 723, c: '#686335', cap: 'Campus in autumn', t: 'University Of Washington Fall Foliage', by: 'ShebleyCL', url: 'https://www.flickr.com/photos/25636851@N03/3019242323', lic: 'CC BY-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-sa/2.0/' },
+      { src: 'img/d3-2.jpg', w: 1024, h: 767, c: '#7e726d', cap: 'Suzzallo reading room', t: 'Suzzallo Library Reading Room', by: 'DanB Seattle 2012', url: 'https://www.flickr.com/photos/81753768@N02/7652015636', lic: 'CC BY-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-sa/2.0/' },
+      { src: 'img/d3-3.jpg', w: 1024, h: 773, c: '#836e3f', cap: 'A bench in the leaves', t: 'Garden Bench', by: 'ShebleyCL', url: 'https://www.flickr.com/photos/25636851@N03/3013886952', lic: 'CC BY-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-sa/2.0/' },
+      { src: 'img/d3-4.jpg', w: 1024, h: 768, c: '#6b6f6d', cap: 'Suzzallo Library', t: 'Suzzallo Library', by: 'amidfallenleaves', url: 'https://www.flickr.com/photos/41904361@N00/3968391904', lic: 'CC0 1.0', licUrl: 'https://creativecommons.org/publicdomain/zero/1.0/' }
+    ]
+  }
+];
+
+const TIMES = [
+  { kind: 'afternoon', name: 'Afternoon', h: 14, m: 0 },
+  { kind: 'golden', name: 'Golden hour' },
+  { kind: 'evening', name: 'Evening', h: 19, m: 0 },
+  { kind: 'other', name: 'Other time' }
+];
+
+/* LOGIC-START */
+/* ---- 4×4 puzzle: random full grid, then remove clues while the answer stays unique ---- */
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+function canPlace(g, i, v) {
+  const r = i >> 2, c = i & 3;
+  for (let k = 0; k < 4; k++) { if (g[r * 4 + k] === v || g[k * 4 + c] === v) return false; }
+  const br = r & 2, bc = c & 2;
+  for (let rr = br; rr < br + 2; rr++) for (let cc = bc; cc < bc + 2; cc++) if (g[rr * 4 + cc] === v) return false;
+  return true;
+}
+function countSolutions(p, limit) {
+  const g = p.slice(); let n = 0;
+  (function rec() {
+    const i = g.indexOf(0);
+    if (i < 0) { n++; return n >= limit; }
+    for (let v = 1; v <= 4; v++) {
+      if (canPlace(g, i, v)) { g[i] = v; if (rec()) return true; g[i] = 0; }
+    }
+    return false;
+  })();
+  return n;
+}
+function fullGrid() {
+  const g = new Array(16).fill(0);
+  (function fill(i) {
+    if (i === 16) return true;
+    for (const v of shuffle([1, 2, 3, 4])) {
+      if (canPlace(g, i, v)) { g[i] = v; if (fill(i + 1)) return true; g[i] = 0; }
+    }
+    return false;
+  })(0);
+  return g;
+}
+function makePuzzle(clues) {
+  let best = null;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const sol = fullGrid(), puzzle = sol.slice();
+    let left = 16;
+    for (const i of shuffle([...Array(16).keys()])) {
+      if (left <= clues) break;
+      const v = puzzle[i]; puzzle[i] = 0;
+      if (countSolutions(puzzle, 2) === 1) left--; else puzzle[i] = v;
+    }
+    if (!best || left < best.left) best = { sol, puzzle, left };
+    if (left === clues) break;
+  }
+  return best;
+}
+
+/* ---- Seattle sunset (NOAA solar approximation) and local clock ---- */
+function nthSundayUTC(y, month, n) {
+  const first = new Date(Date.UTC(y, month, 1)).getUTCDay();
+  return Date.UTC(y, month, 1 + ((7 - first) % 7) + (n - 1) * 7);
+}
+function seattleOffsetHours(y, m, d) { // DST: 2nd Sunday of March to 1st Sunday of November
+  const t = Date.UTC(y, m, d);
+  return (t >= nthSundayUTC(y, 2, 2) && t < nthSundayUTC(y, 10, 1)) ? -7 : -8;
+}
+function sunsetUTCms(y, m, d) {
+  const lat = 47.6062 * Math.PI / 180, lon = -122.3321;
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const doy = Math.round((Date.UTC(y, m, d) - Date.UTC(y, 0, 1)) / 864e5) + 1;
+  const g = 2 * Math.PI / (leap ? 366 : 365) * (doy - 1 + (25 - 12) / 24);
+  const eq = 229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
+  const decl = 0.006918 - 0.399912 * Math.cos(g) + 0.070257 * Math.sin(g) - 0.006758 * Math.cos(2 * g) + 0.000907 * Math.sin(2 * g) - 0.002697 * Math.cos(3 * g) + 0.00148 * Math.sin(3 * g);
+  const cosH = Math.cos(90.833 * Math.PI / 180) / (Math.cos(lat) * Math.cos(decl)) - Math.tan(lat) * Math.tan(decl);
+  const ha = Math.acos(Math.min(1, Math.max(-1, cosH))) * 180 / Math.PI;
+  return Date.UTC(y, m, d) + (720 - 4 * (lon - ha) - eq) * 60000;
+}
+function sunsetLocal(y, m, d) {
+  const t = new Date(sunsetUTCms(y, m, d) + seattleOffsetHours(y, m, d) * 3600000);
+  return { h: t.getUTCHours(), m: t.getUTCMinutes() };
+}
+function goldenStart(y, m, d) { // an hour before sunset, to the nearest quarter hour
+  const s = sunsetLocal(y, m, d);
+  const mins = Math.round((s.h * 60 + s.m - 60) / 15) * 15;
+  return { h: Math.floor(mins / 60), m: mins % 60, sunset: s };
+}
+function fmtTime(h, m) {
+  return ((h + 11) % 12 + 1) + (m ? ':' + String(m).padStart(2, '0') : '') + (h < 12 ? 'am' : 'pm');
+}
+/* LOGIC-END */
+
+/* ================= Helpers ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const reduced = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const wait = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const key = d => d.y * 10000 + d.m * 100 + d.d;
+const addDays = (d, n) => { const t = new Date(Date.UTC(d.y, d.m, d.d + n)); return { y: t.getUTCFullYear(), m: t.getUTCMonth(), d: t.getUTCDate() }; };
+const weekday = d => new Date(Date.UTC(d.y, d.m, d.d)).getUTCDay();
+const dateText = (d, year) => WEEKDAYS[weekday(d)] + ', ' + MONTHS[d.m] + ' ' + d.d + (year ? ', ' + d.y : '');
+const iso = d => d.y + '-' + String(d.m + 1).padStart(2, '0') + '-' + String(d.d).padStart(2, '0');
+
+function seattleToday() {
+  try {
+    const s = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    const p = s.split('-').map(Number);
+    if (p.length === 3 && p.every(Boolean)) return { y: p[0], m: p[1] - 1, d: p[2] };
+  } catch (e) { /* fall through */ }
+  const n = new Date(); return { y: n.getFullYear(), m: n.getMonth(), d: n.getDate() };
+}
+
+/* ================= State ================= */
+const TODAY = seattleToday();
+const MIN_DATE = addDays(TODAY, 1);
+const MAX_DATE = addDays(TODAY, 120);
+const S = {
+  page: 1, noAttempts: 0, caved: false,
+  unlocked: false, opened: new Set(), puzzles: {},
+  chosen: null, date: null, time: null, otherMins: null,
+  view: { y: MIN_DATE.y, m: MIN_DATE.m }, sending: false
+};
+
+/* ================= Navigation ================= */
+const pages = [null, $('#p1'), $('#p2'), $('#p3'), $('#p4')];
+function go(n, push = true) {
+  if (n === S.page) return;
+  pages[S.page].classList.remove('is-active', 'is-entering');
+  const el = pages[n];
+  el.classList.add('is-active');
+  if (!reduced) { el.classList.remove('is-entering'); void el.offsetWidth; el.classList.add('is-entering'); }
+  S.page = n;
+  window.scrollTo(0, 0);
+  if (push) history.pushState({ page: n }, '');
+  if (n === 2) preloadDoors();
+  const h = el.querySelector('h1, h2'); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); }
+}
+history.replaceState({ page: 1 }, '');
+window.addEventListener('popstate', e => {
+  if (!sheet.hidden) { closeSheet(); history.pushState({ page: S.page }, ''); return; }
+  if (!room.hidden) { closeRoom(); history.pushState({ page: S.page }, ''); return; }
+  if (S.page === 4) { history.pushState({ page: 4 }, ''); return; }
+  const p = (e.state && e.state.page) || 1;
+  go(p === 3 && !S.chosen ? 2 : p, false);
+});
+
+/* ================= 1 · YES / NO ================= */
+const yes = $('#yes'), no = $('#no'), ask = $('.p1 .ask');
+let lastEscape = 0;
+
+function yesScale() {
+  const maxByWidth = (window.innerWidth - 2 * 20) / yes.offsetWidth;
+  return Math.min(Math.pow(1.17, S.noAttempts), 2.05, maxByWidth);
+}
+function overlap(a, b, pad) {
+  return !(a.right + pad <= b.left || a.left - pad >= b.right || a.bottom + pad <= b.top || a.top - pad >= b.bottom);
+}
+function escapeNo(px, py) {
+  if (S.caved) return;
+  const now = performance.now();
+  if (now - lastEscape < 280) return;
+  lastEscape = now;
+  S.noAttempts++;
+
+  if (!no.classList.contains('is-loose')) {
+    const r = no.getBoundingClientRect();
+    no.style.left = r.left + 'px'; no.style.top = r.top + 'px';
+    no.classList.add('is-loose');
+    void no.offsetWidth;
+  }
+  const sNo = Math.max(0.42, Math.pow(0.84, S.noAttempts));
+  const sYes = yesScale();
+  yes.style.transform = 'scale(' + sYes + ')';
+  no.style.transform = 'scale(' + sNo + ')';
+
+  // Where YES will be once it has grown (it grows from its bottom-left corner)
+  const yr = yes.getBoundingClientRect();
+  const curS = yr.width / yes.offsetWidth || 1;
+  const yL = yr.left, yB = yr.bottom, yW = yr.width / curS * sYes, yH = yr.height / curS * sYes;
+  const yesBox = { left: yL, right: yL + yW, top: yB - yH, bottom: yB };
+  const textBox = ask.getBoundingClientRect();
+
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const w = no.offsetWidth * sNo, h = no.offsetHeight * sNo;
+  const m = 16, top0 = 56;
+  const cur = { x: parseFloat(no.style.left) || 0, y: parseFloat(no.style.top) || 0 };
+  let best = null, bestScore = -1;
+  for (let i = 0; i < 70; i++) {
+    const x = m + Math.random() * Math.max(1, vw - w - 2 * m);
+    const y = top0 + Math.random() * Math.max(1, vh - h - top0 - m);
+    const box = { left: x, right: x + w, top: y, bottom: y + h };
+    if (overlap(box, yesBox, 18)) continue;
+    const dPointer = Math.hypot(x + w / 2 - px, y + h / 2 - py);
+    const dPrev = Math.hypot(x - cur.x, y - cur.y);
+    if (dPointer < 130) continue;
+    const onText = overlap(box, textBox, 4) ? 0.35 : 1;
+    const score = Math.min(dPointer, 420) * onText + Math.min(dPrev, 200) * 0.4 + Math.random() * 40;
+    if (score > bestScore) { bestScore = score; best = { x, y }; }
+  }
+  if (!best) best = { x: m, y: top0 };
+  no.style.left = best.x + 'px';
+  no.style.top = best.y + 'px';
+
+  if (S.noAttempts >= 5) {
+    S.caved = true;
+    setTimeout(() => {
+      no.textContent = 'ok fine… yes 🙈';
+      no.classList.add('is-caved');
+      no.style.transform = 'scale(1)';
+      no.setAttribute('aria-label', 'ok fine, yes');
+      requestAnimationFrame(() => {
+        const r = no.getBoundingClientRect();
+        const x = Math.min(Math.max(16, r.left), window.innerWidth - no.offsetWidth - 16);
+        const y = Math.min(Math.max(56, r.top), window.innerHeight - no.offsetHeight - 16);
+        no.style.left = x + 'px'; no.style.top = y + 'px';
+      });
+    }, reduced ? 0 : 420);
+  }
+}
+function distToNo(x, y) {
+  const r = no.getBoundingClientRect();
+  return Math.hypot(Math.max(r.left - x, 0, x - r.right), Math.max(r.top - y, 0, y - r.bottom));
+}
+document.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'mouse' || S.page !== 1 || S.caved) return;
+  if (distToNo(e.clientX, e.clientY) < 46) escapeNo(e.clientX, e.clientY);
+}, { passive: true });
+document.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'mouse' || S.page !== 1 || S.caved) return;
+  if (distToNo(e.clientX, e.clientY) < 34) { e.preventDefault(); escapeNo(e.clientX, e.clientY); }
+}, { passive: false });
+no.addEventListener('click', e => {
+  if (S.caved && no.classList.contains('is-caved')) { go(2); return; }
+  e.preventDefault();
+  const r = no.getBoundingClientRect();
+  escapeNo(r.left + r.width / 2, r.top + r.height / 2);
+});
+yes.addEventListener('click', () => go(2));
+window.addEventListener('resize', () => {
+  if (!no.classList.contains('is-loose')) return;
+  const x = Math.min(parseFloat(no.style.left) || 16, window.innerWidth - no.offsetWidth - 16);
+  const y = Math.min(parseFloat(no.style.top) || 56, window.innerHeight - no.offsetHeight - 16);
+  no.style.left = Math.max(16, x) + 'px'; no.style.top = Math.max(56, y) + 'px';
+});
+
+/* ================= 2 · Doors ================= */
+const doorsEl = $('#doors');
+const LOCK_SVG = '<svg class="lock" viewBox="0 0 25 31" aria-hidden="true"><path class="shackle" d="M6.5 14V8.5a6 6 0 0 1 12 0V14" fill="none" stroke="#000" stroke-width="2.4"/><rect x="2" y="13" width="21" height="17" fill="#000"/><rect x="11.4" y="18.5" width="2.2" height="6" fill="#fff"/></svg>';
+
+function teaserHTML(D) {
+  if (D.n === 2) return 'Now you see me. <span class="vanish">No</span>';
+  return esc(D.teaser);
+}
+doorsEl.innerHTML = DOORS.map((D, i) => `
+  <li class="door-row${i === 1 ? ' is-flip' : ''}" data-door="${D.n}">
+    <button class="door" type="button" data-door="${D.n}" aria-label="Door ${D.n}, ${esc(D.title)}. Locked.">
+      <span class="door-frame">
+        <span class="door-view"><img alt="" data-src="${D.photos[0].src}" width="${D.photos[0].w}" height="${D.photos[0].h}" style="background:${D.photos[0].c}"></span>
+        <span class="leaf">
+          <span class="leaf-num" aria-hidden="true">${D.n}</span>
+          <span class="leaf-panel a"></span><span class="leaf-panel b"></span>
+          <span class="knob"></span>${LOCK_SVG}
+        </span>
+      </span>
+    </button>
+    <div class="door-text">
+      <h3 class="door-title">${esc(D.title)}</h3>
+      <p class="door-teaser">${teaserHTML(D)}</p>
+      <p class="door-state">Locked</p>
+    </div>
+  </li>`).join('');
+
+const doorBtn = n => $('.door[data-door="' + n + '"]');
+const doorRow = n => $('.door-row[data-door="' + n + '"]');
+let preloaded = false;
+function preloadDoors() {
+  if (preloaded) return; preloaded = true;
+  $$('.door-view img').forEach(img => { img.src = img.dataset.src; });
+}
+function setDoorState(n) {
+  const row = doorRow(n), btn = doorBtn(n), D = DOORS[n - 1];
+  const open = S.opened.has(n);
+  row.classList.toggle('is-unlocked', S.unlocked && !open);
+  row.classList.toggle('is-open', open);
+  btn.classList.toggle('is-unlocked', S.unlocked || open);
+  row.querySelector('.door-state').textContent = open ? 'Open' : (S.unlocked ? 'Unlocked' : 'Locked');
+  btn.setAttribute('aria-label', 'Door ' + n + ', ' + D.title + '. ' + (open ? 'Open, show the plan.' : S.unlocked ? 'Unlocked.' : 'Locked.'));
+}
+async function swingOpen(n, thenRoom) {
+  preloadDoors();
+  S.opened.add(n);
+  const btn = doorBtn(n);
+  btn.classList.add('is-unlocked');
+  await wait(S.unlocked ? 120 : 0);
+  btn.classList.add('is-open');
+  setDoorState(n);
+  if (thenRoom) { await wait(1050); openRoom(n); }
+}
+doorsEl.addEventListener('click', e => {
+  const btn = e.target.closest('.door'); if (!btn) return;
+  const n = +btn.dataset.door;
+  if (S.opened.has(n)) openRoom(n);
+  else if (S.unlocked) swingOpen(n, true);
+  else openSheet(n);
+});
+
+/* ================= Puzzle sheet ================= */
+const sheet = $('#sheet'), grid = $('#grid'), sheetMsg = $('#sheetMsg');
+let P = null; // the open puzzle
+
+function openSheet(n) {
+  if (!S.puzzles[n]) {
+    const made = makePuzzle(8);
+    S.puzzles[n] = { n, sol: made.sol, cur: made.puzzle.slice(), given: made.puzzle.map(v => v > 0), hint: new Array(16).fill(false), solved: false };
+  }
+  P = S.puzzles[n];
+  $('#sheetDoor').textContent = 'Door ' + n;
+  sheetMsg.textContent = '';
+  grid.classList.remove('is-solved');
+  renderGrid();
+  sheet.hidden = false;
+  document.body.classList.add('is-locked');
+  requestAnimationFrame(() => requestAnimationFrame(() => sheet.classList.add('is-in')));
+  setTimeout(() => { const first = grid.querySelector('.cell:not([aria-disabled="true"])'); (first || $('#check')).focus({ preventScroll: true }); }, reduced ? 0 : 380);
+}
+function closeSheet() {
+  sheet.classList.remove('is-in');
+  document.body.classList.remove('is-locked');
+  setTimeout(() => { sheet.hidden = true; }, reduced ? 0 : 420);
+  if (P && !P.solved) { const b = doorBtn(P.n); if (b) b.focus({ preventScroll: true }); }
+}
+sheet.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeSheet(); });
+
+function cellLabel(i) {
+  const v = P.cur[i];
+  return 'Row ' + ((i >> 2) + 1) + ', column ' + ((i & 3) + 1) + ', ' + (v ? v : 'empty') + (P.given[i] || P.hint[i] ? ', fixed' : '');
+}
+function renderGrid() {
+  grid.innerHTML = P.cur.map((v, i) => {
+    const fixed = P.given[i] || P.hint[i];
+    const cls = 'cell' + (P.given[i] ? ' is-given' : '') + (P.hint[i] ? ' is-hint' : '');
+    return '<button type="button" class="' + cls + '" data-i="' + i + '" style="--i:' + i + '"' + (fixed ? ' aria-disabled="true"' : '') + ' aria-label="' + cellLabel(i) + '">' + (v || '') + '</button>';
+  }).join('');
+}
+function isComplete() { return P.cur.every((v, i) => v === P.sol[i]); }
+grid.addEventListener('click', e => {
+  const c = e.target.closest('.cell'); if (!c || !P || P.solved) return;
+  const i = +c.dataset.i;
+  if (P.given[i] || P.hint[i]) return;
+  P.cur[i] = (P.cur[i] + 1) % 5;
+  c.textContent = P.cur[i] || '';
+  c.classList.remove('is-wrong');
+  c.setAttribute('aria-label', cellLabel(i));
+  sheetMsg.textContent = '';
+  if (isComplete()) solved();
+});
+$('#check').addEventListener('click', () => {
+  if (!P || P.solved) return;
+  const wrong = [], empty = [];
+  P.cur.forEach((v, i) => { if (!v) empty.push(i); else if (v !== P.sol[i]) wrong.push(i); });
+  $$('.cell', grid).forEach(c => c.classList.remove('is-wrong'));
+  if (wrong.length) {
+    void grid.offsetWidth;
+    wrong.forEach(i => grid.children[i].classList.add('is-wrong'));
+    sheetMsg.textContent = 'Not quite. ' + (wrong.length === 1 ? 'One square is off.' : wrong.length + ' squares are off.');
+  } else if (empty.length) {
+    sheetMsg.textContent = 'So far so good. Fill the rest.';
+  } else solved();
+});
+$('#hint').addEventListener('click', () => {
+  if (!P || P.solved) return;
+  const pool = [];
+  P.cur.forEach((v, i) => { if (!P.given[i] && !P.hint[i] && v !== P.sol[i]) pool.push(i); });
+  if (!pool.length) return;
+  const i = pool[Math.floor(Math.random() * pool.length)];
+  P.cur[i] = P.sol[i]; P.hint[i] = true;
+  renderGrid();
+  sheetMsg.textContent = '';
+  if (isComplete()) solved();
+});
+async function solved() {
+  P.solved = true;
+  const n = P.n;
+  grid.classList.add('is-solved');
+  sheetMsg.textContent = 'Open.';
+  const r = grid.getBoundingClientRect();
+  confetti(r.left + r.width / 2, r.top + r.height / 3, DOORS[n - 1].confetti);
+  await wait(1100);
+  closeSheet();
+  const first = !S.unlocked;
+  S.unlocked = true;
+  if (first) DOORS.forEach(D => { doorBtn(D.n).classList.add('is-unlocked'); setDoorState(D.n); });
+  await wait(380);
+  swingOpen(n, true);
+}
+
+/* ================= Room ================= */
+const room = $('#room'), roomIn = $('#roomIn');
+function openRoom(n) {
+  const D = DOORS[n - 1];
+  room.dataset.world = D.world;
+  room.dataset.door = n;
+  const shots = D.photos.map((p, i) => `
+      <figure class="shot">
+        <img class="shot-img" src="${p.src}" alt="${esc(p.cap)}" width="${p.w}" height="${p.h}" style="background:${p.c}" ${i ? 'loading="lazy"' : ''} decoding="async">
+      </figure>`).join('');
+  const credits = D.photos.map(p => `<li>“<a href="${p.url}" target="_blank" rel="noopener">${esc(p.t)}</a>” by ${esc(p.by)}, <a href="${p.licUrl}" target="_blank" rel="noopener">${esc(p.lic)}</a>. Resized and cropped.</li>`).join('');
+  roomIn.innerHTML = `
+    <p class="room-tag">Door ${n}</p>
+    <div class="gallery">
+      <div class="track" id="track" tabindex="0" aria-label="Photos">${shots}</div>
+      <div class="gallery-bar">
+        <span class="gallery-cap" id="galCap">${esc(D.photos[0].cap)}</span>
+        <span class="gallery-count" id="galCount">1/${D.photos.length}</span>
+        <span class="gallery-nav">
+          <button type="button" id="galPrev" aria-label="Previous photo" disabled>‹</button>
+          <button type="button" id="galNext" aria-label="Next photo">›</button>
+        </span>
+      </div>
+    </div>
+    <div class="room-body">
+      <p class="room-teaser">${teaserHTML(D)}</p>
+      <h2 class="room-title" id="roomTitle">${esc(D.title)}</h2>
+      <span class="room-rule"></span>
+      <p class="room-plan">${esc(D.plan)}</p>
+      <div class="room-actions">
+        <button class="pill pill-main" type="button" id="choose">Choose one</button>
+        ${D.link ? `<a class="pill" href="${D.link.href}" target="_blank" rel="noopener">${esc(D.link.label)}</a>` : ''}
+      </div>
+      <details class="credits"><summary>Photo credits</summary><ul>${credits}</ul></details>
+    </div>`;
+  const track = $('#track'), count = $('#galCount'), cap = $('#galCap'), prev = $('#galPrev'), next = $('#galNext');
+  const idx = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+  const sync = () => {
+    const i = Math.min(D.photos.length - 1, Math.max(0, idx()));
+    count.textContent = (i + 1) + '/' + D.photos.length;
+    cap.textContent = D.photos[i].cap;
+    prev.disabled = i === 0; next.disabled = i === D.photos.length - 1;
+  };
+  track.addEventListener('scroll', () => requestAnimationFrame(sync), { passive: true });
+  prev.addEventListener('click', () => track.scrollTo({ left: (idx() - 1) * track.clientWidth, behavior: reduced ? 'auto' : 'smooth' }));
+  next.addEventListener('click', () => track.scrollTo({ left: (idx() + 1) * track.clientWidth, behavior: reduced ? 'auto' : 'smooth' }));
+  $('#choose').addEventListener('click', () => choose(n));
+
+  room.hidden = false;
+  room.scrollTop = 0;
+  document.body.classList.add('is-locked');
+  requestAnimationFrame(() => requestAnimationFrame(() => room.classList.add('is-in')));
+  setTimeout(() => $('#roomClose').focus({ preventScroll: true }), reduced ? 0 : 300);
+}
+function closeRoom() {
+  const n = +room.dataset.door;
+  room.classList.remove('is-in');
+  document.body.classList.remove('is-locked');
+  setTimeout(() => { room.hidden = true; roomIn.innerHTML = ''; }, reduced ? 0 : 420);
+  const b = doorBtn(n); if (b && S.page === 2) b.focus({ preventScroll: true });
+}
+$('#roomClose').addEventListener('click', closeRoom);
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (!sheet.hidden) closeSheet(); else if (!room.hidden) closeRoom();
+});
+function choose(n) {
+  S.chosen = n;
+  closeRoom();
+  setupWhen();
+  go(3);
+}
+
+/* ================= 3 · When ================= */
+const chipsEl = $('#chips'), timeNote = $('#timeNote'), other = $('#other'), otherTime = $('#otherTime'), sendBtn = $('#send');
+
+function timeFor(kind) {
+  if (kind === 'golden') return S.date ? goldenStart(S.date.y, S.date.m, S.date.d) : null;
+  if (kind === 'other') return S.otherMins == null ? null : { h: Math.floor(S.otherMins / 60), m: S.otherMins % 60 };
+  const t = TIMES.find(x => x.kind === kind); return { h: t.h, m: t.m };
+}
+function chipLabel(t) {
+  if (t.kind === 'golden') {
+    const g = S.date ? goldenStart(S.date.y, S.date.m, S.date.d) : { h: 17, m: 0 };
+    return 'Golden hour (' + fmtTime(g.h, g.m) + ')';
+  }
+  if (t.kind === 'other') return 'Other time';
+  return t.name + ' (' + fmtTime(t.h, t.m) + ')';
+}
+function allowed(kind) {
+  const D = DOORS[S.chosen - 1];
+  return !D.only || kind === D.only || kind === 'other';
+}
+function setupWhen() {
+  const D = DOORS[S.chosen - 1];
+  $('#pickedNum').textContent = D.n;
+  $('#pickedName').textContent = 'Door ' + D.n + ' — ' + D.title;
+  if (S.time && !allowed(S.time)) S.time = null;
+  if (D.only && !S.time) S.time = D.only;
+  if (S.time === 'other' && S.otherMins != null && !inRange(S.otherMins)) { /* keep, the note will explain */ }
+  otherTime.min = toHHMM(D.range[0]); otherTime.max = toHHMM(D.range[1]);
+  renderChips(); renderCal(); updateSend();
+}
+const toHHMM = mins => String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+function inRange(mins) { const r = DOORS[S.chosen - 1].range; return mins >= r[0] && mins <= r[1]; }
+
+function renderChips() {
+  const D = DOORS[S.chosen - 1];
+  chipsEl.innerHTML = TIMES.map(t => {
+    const ok = allowed(t.kind);
+    const sel = S.time === t.kind;
+    const cls = 'chip' + (sel ? ' is-sel' : '') + (D.suggest === t.kind ? ' is-suggested' : '');
+    return '<button type="button" role="radio" aria-checked="' + sel + '" class="' + cls + '" data-kind="' + t.kind + '"' + (ok ? '' : ' disabled') + '>' + esc(chipLabel(t)) + '</button>';
+  }).join('');
+  other.hidden = S.time !== 'other';
+  renderNote();
+}
+function renderNote() {
+  const D = DOORS[S.chosen - 1];
+  let html = '';
+  if (D.only) html = esc(D.onlyNote);
+  if (D.suggest) {
+    html = esc(D.suggestNote);
+    if (S.date) { const g = goldenStart(S.date.y, S.date.m, S.date.d); html += '<small>Sunset that day: ' + fmtTime(g.sunset.h, g.sunset.m) + '</small>'; }
+  }
+  if (S.time === 'other' && S.otherMins != null && !inRange(S.otherMins)) html = esc(D.rangeNote);
+  timeNote.innerHTML = html;
+}
+chipsEl.addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c || c.disabled) return;
+  S.time = c.dataset.kind;
+  renderChips();
+  if (S.time === 'other') { otherTime.focus(); if (otherTime.showPicker) { try { otherTime.showPicker(); } catch (err) { /* not allowed here */ } } }
+  updateSend();
+});
+otherTime.addEventListener('input', () => {
+  const v = otherTime.value;
+  if (/^\d{2}:\d{2}/.test(v)) { const [h, m] = v.split(':').map(Number); S.otherMins = h * 60 + m; } else S.otherMins = null;
+  renderNote(); updateSend();
+});
+
+const calGrid = $('#calGrid'), calMonth = $('#calMonth'), calPrev = $('#calPrev'), calNext = $('#calNext');
+function renderCal() {
+  const { y, m } = S.view;
+  calMonth.textContent = MONTHS[m] + ' ' + y;
+  const firstDow = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7; // Monday first
+  const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  let html = ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => '<span class="cal-dow" aria-hidden="true">' + d + '</span>').join('');
+  for (let i = 0; i < firstDow; i++) html += '<span aria-hidden="true"></span>';
+  for (let d = 1; d <= days; d++) {
+    const dt = { y, m, d }, k = key(dt);
+    const off = k < key(MIN_DATE) || k > key(MAX_DATE);
+    const sel = S.date && key(S.date) === k;
+    html += '<button type="button" class="cal-day' + (sel ? ' is-sel' : '') + '" data-d="' + d + '"' + (off ? ' disabled' : '') + ' aria-pressed="' + !!sel + '" aria-label="' + dateText(dt) + '">' + d + '</button>';
+  }
+  const tail = (7 - (firstDow + days) % 7) % 7;
+  for (let i = 0; i < tail; i++) html += '<span aria-hidden="true"></span>';
+  calGrid.innerHTML = html;
+  calPrev.disabled = y * 12 + m <= MIN_DATE.y * 12 + MIN_DATE.m;
+  calNext.disabled = y * 12 + m >= MAX_DATE.y * 12 + MAX_DATE.m;
+}
+calGrid.addEventListener('click', e => {
+  const b = e.target.closest('.cal-day'); if (!b || b.disabled) return;
+  S.date = { y: S.view.y, m: S.view.m, d: +b.dataset.d };
+  renderCal(); renderChips(); updateSend();
+});
+calPrev.addEventListener('click', () => { const t = S.view.y * 12 + S.view.m - 1; S.view = { y: Math.floor(t / 12), m: t % 12 }; renderCal(); });
+calNext.addEventListener('click', () => { const t = S.view.y * 12 + S.view.m + 1; S.view = { y: Math.floor(t / 12), m: t % 12 }; renderCal(); });
+$('#change').addEventListener('click', () => go(2));
+
+function chosenTime() {
+  if (!S.time || !allowed(S.time)) return null;
+  const t = timeFor(S.time);
+  if (!t) return null;
+  if (S.time === 'other' && !inRange(t.h * 60 + t.m)) return null;
+  return t;
+}
+function updateSend() {
+  sendBtn.disabled = S.sending || !(S.date && chosenTime());
+}
+
+/* ================= Send ================= */
+const sendStatus = $('#sendStatus');
+async function post(payload) {
+  const ctrl = 'AbortController' in window ? new AbortController() : null;
+  const timer = ctrl && setTimeout(() => ctrl.abort(), 25000);
+  try {
+    const res = await fetch('/api/reply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: ctrl ? ctrl.signal : undefined });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return true;
+  } finally { if (timer) clearTimeout(timer); }
+}
+sendBtn.addEventListener('click', async () => {
+  const t = chosenTime(); if (!S.date || !t || S.sending) return;
+  const D = DOORS[S.chosen - 1];
+  const kind = TIMES.find(x => x.kind === S.time);
+  const g = S.time === 'golden' ? goldenStart(S.date.y, S.date.m, S.date.d) : null;
+  const payload = {
+    door: D.n, doorName: D.title, plan: D.plan,
+    dateISO: iso(S.date), dateText: dateText(S.date, true),
+    timeText: fmtTime(t.h, t.m), timeLabel: kind ? kind.name : '',
+    sunsetText: g ? fmtTime(g.sunset.h, g.sunset.m) : null,
+    note: $('#note').value.trim().slice(0, 600),
+    noAttempts: S.noAttempts, caved: S.caved, website: ''
+  };
+  S.sending = true; updateSend();
+  sendBtn.textContent = 'Sending…'; sendStatus.textContent = '';
+  let ok = false;
+  for (let attempt = 0; attempt < 2 && !ok; attempt++) {
+    try { ok = await post(payload); } catch (err) { if (attempt === 0) await new Promise(r => setTimeout(r, 1500)); }
+  }
+  S.sending = false;
+  sendBtn.textContent = 'Send it';
+  if (!ok) { updateSend(); sendStatus.textContent = 'Didn’t send. Check your connection and try again.'; return; }
+  $('#see').textContent = 'See you on ' + dateText(S.date) + ' at ' + fmtTime(t.h, t.m) + '.';
+  go(4);
+});
+
+/* ================= Confetti (squares and bars, no hearts) ================= */
+const cv = $('#confetti'), cx = cv.getContext('2d');
+let bits = [], raf = 0;
+function confetti(x, y, colors) {
+  if (reduced) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+  cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  for (let i = 0; i < 110; i++) {
+    const bar = Math.random() < 0.45;
+    bits.push({
+      x, y, vx: (Math.random() - 0.5) * 13, vy: -(Math.random() * 11 + 5),
+      w: bar ? 3 + Math.random() * 2 : 6 + Math.random() * 6, h: bar ? 12 + Math.random() * 10 : 6 + Math.random() * 6,
+      r: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 0.35,
+      c: colors[i % colors.length], life: 0, max: 90 + Math.random() * 50
+    });
+  }
+  if (!raf) raf = requestAnimationFrame(tick);
+}
+function tick() {
+  cx.clearRect(0, 0, innerWidth, innerHeight);
+  bits = bits.filter(b => b.life < b.max && b.y < innerHeight + 40);
+  for (const b of bits) {
+    b.life++; b.vy += 0.33; b.vx *= 0.985; b.x += b.vx; b.y += b.vy; b.r += b.vr;
+    cx.save(); cx.globalAlpha = Math.min(1, (b.max - b.life) / 25);
+    cx.translate(b.x, b.y); cx.rotate(b.r); cx.fillStyle = b.c; cx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h); cx.restore();
+  }
+  raf = bits.length ? requestAnimationFrame(tick) : 0;
+  if (!raf) cx.clearRect(0, 0, innerWidth, innerHeight);
+}
+
+/* expose for local testing only */
+window.__invite = { S, DOORS, goldenStart, sunsetLocal, makePuzzle, countSolutions };
+})();
+</script>
+</body>
+</html>
