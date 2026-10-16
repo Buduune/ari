@@ -23,10 +23,11 @@ from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 from html import escape
 from pathlib import Path
+from typing import Any
 
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 log = logging.getLogger("invite")
 logging.basicConfig(level=logging.INFO)
@@ -49,6 +50,16 @@ class Reply(BaseModel):
     noAttempts: int = Field(default=0, ge=0, le=99)
     caved: bool = False
     website: str = Field(default="", max_length=200)  # honeypot: people never fill this
+
+    @model_validator(mode="before")
+    @classmethod
+    def _repair_broken_characters(cls, data: Any) -> Any:
+        # Half of an emoji (a lone UTF-16 surrogate, e.g. from a cut-off paste) can't be put in an
+        # email or a JSON reply. Swap it for U+FFFD instead of failing the whole answer.
+        if isinstance(data, dict):
+            return {k: v.encode("utf-16", "surrogatepass").decode("utf-16", "replace") if isinstance(v, str) else v
+                    for k, v in data.items()}
+        return data
 
     @field_validator("dateISO")
     @classmethod

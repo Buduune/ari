@@ -1,5 +1,6 @@
 """Backend: validation, the email she triggers, and how Gmail is used."""
 
+import json
 import re
 import smtplib
 
@@ -102,6 +103,16 @@ def test_html_part_escapes_what_she_typed(api, gmail):
     html = body(gmail.sent[0], "html")
     assert "<script>" not in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;b&gt;x&lt;/b&gt;" in html
+
+
+def test_half_an_emoji_in_the_note_still_sends(api, gmail):
+    # A lone surrogate (half of an emoji, e.g. after a cut-off paste) must not crash the email.
+    raw = make_payload(note="ok 🙂")
+    body_json = json.dumps(raw).replace("\\ud83d\\ude42", "\\ud83d")  # keep only the first half
+    r = api.post("/api/reply", content=body_json, headers={"Content-Type": "application/json"})
+    assert r.status_code == 200, r.text
+    assert len(gmail.sent) == 1
+    assert "ok \ufffd" in body(gmail.sent[0])   # the broken half becomes a replacement character
 
 
 def test_other_time_label_is_not_repeated(api, gmail):

@@ -43,9 +43,18 @@ requirements.txt
 
 ## 3. Өөрийн компьютер дээр ажиллуулах
 
+macOS / Linux:
+
 ```bash
 pip install -r requirements.txt
-DRY_RUN=1 uvicorn main:app --reload
+DRY_RUN=1 python -m uvicorn main:app --reload
+```
+
+Windows (PowerShell):
+
+```powershell
+py -m pip install -r requirements.txt
+$env:DRY_RUN = "1"; py -m uvicorn main:app --reload
 ```
 
 http://127.0.0.1:8000 нээ. `DRY_RUN=1` үед имэйл явахгүй, оронд нь terminal дээр хэвлэгдэнэ.

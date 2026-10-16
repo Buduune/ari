@@ -1051,7 +1051,7 @@ sendBtn.addEventListener('click', async () => {
     dateISO: iso(S.date), dateText: dateText(S.date, true),
     timeText: fmtTime(t.h, t.m), timeLabel: kind ? kind.name : '',
     sunsetText: g ? fmtTime(g.sunset.h, g.sunset.m) : null,
-    note: $('#note').value.trim().slice(0, 600),
+    note: Array.from($('#note').value.trim()).slice(0, 600).join(''), // by characters, never splitting an emoji
     noAttempts: S.noAttempts, caved: S.caved, website: ''
   };
   S.sending = true; updateSend();
