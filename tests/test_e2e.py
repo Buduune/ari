@@ -6,6 +6,7 @@ Skipped automatically when Playwright or its Chromium is not installed.
 
 import calendar
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -160,6 +161,19 @@ def test_tapping_the_edge_of_yes_is_a_yes_not_a_no(page):
     assert state(page, "noAttempts") == 0
 
 
+def test_a_long_press_on_no_counts_once(page):
+    # On touch, the press itself makes NO run. The click that follows when the finger lifts
+    # (here after 350ms, past the double-count guard) must not count a second time.
+    page.eval_on_selector("#no", """el => {
+        const r = el.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+        el.dispatchEvent(new PointerEvent('pointerdown', {pointerType: 'touch', clientX: x, clientY: y, bubbles: true, cancelable: true}));
+    }""")
+    page.wait_for_timeout(350)
+    page.eval_on_selector("#no", "el => el.dispatchEvent(new MouseEvent('click', {bubbles: true, cancelable: true, detail: 1}))")
+    page.wait_for_timeout(100)
+    assert state(page, "noAttempts") == 1
+
+
 def test_mouse_over_yes_does_not_scare_no(browser, server):
     ctx = browser.new_context(viewport={"width": 1280, "height": 800})
     try:
@@ -195,6 +209,7 @@ def test_no_runs_away_shrinks_and_gives_in_after_five(page):
     assert state(page, "noAttempts") == 5 and state(page, "caved") is True
     tap_center(page, "#no")
     page.wait_for_selector("#p2.is-active")
+    assert state(page, "pressedCaved") is True               # the email will say she pressed it
 
 
 # --- page 2 -------------------------------------------------------------------
@@ -241,7 +256,11 @@ def test_solving_one_door_unlocks_all_three(page):
 def test_page_behind_a_dialog_is_out_of_reach(page):
     # Keyboard and screen-reader users shouldn't wander behind the puzzle or the room.
     to_doors(page)
-    inert = lambda: page.evaluate("() => document.querySelector('#app').inert")
+    def inert():
+        # `inert` for current browsers; aria-hidden too, since iOS 15.0–15.4 ignore `inert`
+        return page.evaluate("() => { const a = document.querySelector('#app'); "
+                             "return a.inert && a.getAttribute('aria-hidden') === 'true' ? true "
+                             ": (!a.inert && !a.hasAttribute('aria-hidden') ? false : 'mixed'); }")
     assert inert() is False
     page.locator('.door[data-door="1"]').tap()
     page.wait_for_selector("#sheet.is-in")
@@ -253,6 +272,72 @@ def test_page_behind_a_dialog_is_out_of_reach(page):
     assert inert() is True
     close_room(page)
     assert inert() is False
+
+
+def test_reopening_the_puzzle_right_after_closing_it_works(page):
+    # Esc closes it and puts focus back on the door; Enter right away reopens it
+    # before the old close timer fires. That timer must not hide the new sheet.
+    to_doors(page)
+    page.locator('.door[data-door="1"]').tap()
+    page.wait_for_selector("#sheet.is-in")
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(80)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(700)
+    assert page.locator("#sheet").is_visible()
+    page.keyboard.press("Escape")
+    page.wait_for_selector("#sheet", state="hidden")
+    assert page.evaluate("() => document.querySelector('#app').inert") is False
+
+
+def test_reopening_a_room_right_after_closing_it_works(page):
+    to_doors(page)
+    open_locked_door(page, 1)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(80)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(700)
+    assert page.locator("#room").is_visible()
+    assert page.locator("#roomTitle").count() == 1
+    page.keyboard.press("Escape")
+    page.wait_for_selector("#room", state="hidden")
+    assert page.evaluate("() => document.querySelector('#app').inert") is False
+
+
+@pytest.mark.parametrize("dialog", ["sheet", "room"])
+def test_focus_stays_on_the_door_after_a_quick_close(page, dialog):
+    to_doors(page)
+    if dialog == "sheet":
+        page.locator('.door[data-door="1"]').tap()
+        page.wait_for_selector("#sheet.is-in")
+    else:
+        open_locked_door(page, 1)
+    page.keyboard.press("Escape")            # before the dialog's own focus timer has fired
+    page.wait_for_timeout(500)               # let that timer fire
+    focused = page.evaluate("() => document.activeElement.closest('.door')?.dataset.door")
+    assert focused == "1"
+
+
+def test_leaving_the_doors_mid_animation_cancels_the_room(page):
+    to_doors(page)
+    page.locator('.door[data-door="2"]').tap()
+    page.wait_for_selector("#sheet.is-in")
+    solve_sheet(page, 2)
+    page.wait_for_selector("#sheet", state="hidden", timeout=5000)   # door is about to swing
+    page.go_back()
+    page.wait_for_selector("#p1.is-active", timeout=3000)
+    page.wait_for_timeout(2500)                                      # longer than the swing
+    assert page.locator("#room").is_hidden()
+    assert page.evaluate("() => document.querySelector('#app').inert") is False
+
+
+def test_back_while_a_dialog_fades_out_still_goes_back(page):
+    to_doors(page)
+    page.locator('.door[data-door="1"]').tap()
+    page.wait_for_selector("#sheet.is-in")
+    page.locator("#sheet .x").tap()
+    page.go_back()                                       # right away, while the sheet is fading
+    page.wait_for_selector("#p1.is-active", timeout=3000)
 
 
 def test_double_tap_on_a_door_does_not_reset_the_room(page):
@@ -293,6 +378,16 @@ def test_gallery_moves_to_the_next_photo(page):
     assert page.locator("#galCap").inner_text() == "Suzzallo reading room"
 
 
+def test_keyboard_focus_ring_shows_on_the_dark_room(page):
+    to_doors(page)
+    open_locked_door(page, 2)
+    page.wait_for_function("() => document.activeElement.id === 'roomClose'")
+    page.keyboard.press("Tab")
+    color = page.evaluate("() => getComputedStyle(document.activeElement).outlineColor")
+    r, g, b = (int(v) for v in re.findall(r"\d+", color)[:3])
+    assert min(r, g, b) > 180, color        # light ring on the #1c1c1c room
+
+
 def test_small_controls_are_big_enough_to_tap(page):
     to_doors(page)
     open_locked_door(page, 1)
@@ -323,10 +418,24 @@ def test_dates_before_tomorrow_cannot_be_picked(page):
             assert days.nth(d - 1).is_disabled(), d
 
 
+def test_keyboard_focus_stays_put_after_picking_a_date_or_time(page):
+    choose_door(page, 2)
+    day = page.locator(".cal-day:not([disabled])").first
+    d = day.get_attribute("data-d")
+    day.focus()
+    page.keyboard.press("Enter")
+    assert page.evaluate("() => document.activeElement.dataset.d") == d
+    chip = page.locator('.chip[data-kind="evening"]')
+    chip.focus()
+    page.keyboard.press("Space")
+    assert page.evaluate("() => document.activeElement.dataset.kind") == "evening"
+    assert chip.get_attribute("aria-pressed") == "true"
+
+
 def test_door_one_only_allows_times_mopop_is_open(page):
     choose_door(page, 1)
     chips = page.locator(".chip")
-    assert chips.nth(0).get_attribute("aria-checked") == "true"   # Afternoon (2pm) picked for her
+    assert chips.nth(0).get_attribute("aria-pressed") == "true"   # Afternoon (2pm) picked for her
     assert chips.nth(1).is_disabled() and chips.nth(2).is_disabled()
     assert page.locator("#timeNote").inner_text() == "MoPOP closes at 5."
     pick_first_open_day(page)
@@ -346,7 +455,7 @@ def test_time_picked_for_her_does_not_follow_her_to_another_door(page):
     page.wait_for_selector("#room.is-in", timeout=5000)
     page.locator("#choose").tap()
     page.wait_for_selector("#p3.is-active")
-    assert page.locator('.chip[aria-checked="true"]').count() == 0
+    assert page.locator('.chip[aria-pressed="true"]').count() == 0
 
 
 def test_time_she_picked_herself_is_kept_when_she_switches_doors(page):
@@ -358,7 +467,7 @@ def test_time_she_picked_herself_is_kept_when_she_switches_doors(page):
     page.wait_for_selector("#room.is-in", timeout=5000)
     page.locator("#choose").tap()
     page.wait_for_selector("#p3.is-active")
-    assert page.locator('.chip[aria-checked="true"]').get_attribute("data-kind") == "evening"
+    assert page.locator('.chip[aria-pressed="true"]').get_attribute("data-kind") == "evening"
 
 
 def test_other_time_works_when_the_picker_only_fires_change(page):
@@ -368,6 +477,23 @@ def test_other_time_works_when_the_picker_only_fires_change(page):
     page.locator('.chip[data-kind="other"]').tap()
     page.eval_on_selector("#otherTime", "el => { el.value = '18:30'; el.dispatchEvent(new Event('change', {bubbles: true})); }")
     assert page.locator("#send").is_enabled()
+
+
+def test_golden_hour_shows_a_time_only_once_there_is_a_date(page):
+    choose_door(page, 3)
+    golden = page.locator('.chip[data-kind="golden"]')
+    assert golden.inner_text() == "Golden hour"
+    pick_first_open_day(page)
+    assert re.fullmatch(r"Golden hour \(\d{1,2}(:\d\d)?pm\)", golden.inner_text())
+
+
+def test_door_two_says_the_latest_start(page):
+    choose_door(page, 2)
+    pick_first_open_day(page)
+    page.locator('.chip[data-kind="other"]').tap()
+    page.locator("#otherTime").fill("20:30")
+    assert page.locator("#send").is_disabled()
+    assert "start by 8pm" in page.locator("#timeNote").inner_text()
 
 
 def test_door_three_suggests_golden_hour(page):
@@ -399,13 +525,68 @@ def test_send_posts_her_answer_and_shows_the_last_page(page):
     assert see.startswith("See you on ") and f" at {sent['timeText']}." in see
 
 
-def test_failed_send_keeps_her_on_page_three_with_a_message(page):
-    page.route("**/api/reply", lambda route: route.fulfill(status=500, body="{}"))
+def test_last_page_shows_the_date_that_was_sent(page):
+    choose_door(page, 2)
+    days = page.locator(".cal-day:not([disabled])")
+    days.nth(0).tap()
+    sent_label = days.nth(0).get_attribute("aria-label")          # e.g. "Friday, October 16"
+    page.locator('.chip[data-kind="evening"]').tap()
+    page.evaluate("() => { const f = window.fetch; window.fetch = (...a) => new Promise(r => setTimeout(r, 1500)).then(() => f(...a)); }")
+    page.locator("#send").tap()
+    page.wait_for_timeout(300)
+    days.nth(3).tap()                                              # another day, while it says "Sending…"
+    page.wait_for_selector("#p4.is-active", timeout=10000)
+    assert page.locator("#see").inner_text() == f"See you on {sent_label} at 7pm."
+
+
+def test_email_says_which_button_she_really_pressed(page):
+    for _ in range(5):
+        tap_center(page, "#no")
+        page.wait_for_timeout(400)
+    page.wait_for_timeout(600)
+    assert page.locator("#no").inner_text() == "ok fine… yes 🙈"
+    page.locator("#yes").tap()                            # the real YES, not the one NO turned into
+    page.wait_for_selector("#p2.is-active")
+    open_locked_door(page, 2)
+    page.locator("#choose").tap()
+    page.wait_for_selector("#p3.is-active")
+    pick_first_open_day(page)
+    page.locator('.chip[data-kind="evening"]').tap()
+    with page.expect_request("**/api/reply") as req:
+        page.locator("#send").tap()
+    sent = req.value.post_data_json
+    assert sent["noAttempts"] == 5
+    assert sent["caved"] is False
+
+
+def _send_with(page, handler):
+    calls = []
+    page.route("**/api/reply", lambda route: (calls.append(1), handler(route)))
     choose_door(page, 2)
     pick_first_open_day(page)
     page.locator('.chip[data-kind="evening"]').tap()
     page.locator("#send").tap()
     page.wait_for_function("() => document.querySelector('#sendStatus').textContent.length > 0", timeout=10000)
+    page.wait_for_timeout(300)
+    return calls
+
+
+@pytest.mark.parametrize("status,message", [
+    (500, "Didn’t send. Try again in a minute."),
+    (502, "Didn’t send. Try again in a minute."),
+    (429, "Didn’t send. Too many tries, wait a few minutes."),
+])
+def test_server_error_is_not_retried_and_says_so(page, status, message):
+    calls = _send_with(page, lambda route: route.fulfill(status=status, body="{}"))
+    assert len(calls) == 1                                 # retrying a server error could email twice
+    assert page.locator("#sendStatus").inner_text() == message
+    assert state(page, "page") == 3
+    assert page.locator("#send").is_enabled()
+
+
+def test_lost_connection_is_retried_once_then_explained(page):
+    calls = _send_with(page, lambda route: route.abort("internetdisconnected"))
+    assert len(calls) == 2
     assert page.locator("#sendStatus").inner_text() == "Didn’t send. Check your connection and try again."
     assert state(page, "page") == 3
     assert page.locator("#send").is_enabled()

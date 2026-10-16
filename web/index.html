@@ -13,7 +13,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=EB+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Noto+Sans:wght@300;400&amp;display=swap">
-<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@500&amp;display=swap">
+<link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@500&amp;display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@500&amp;display=swap"></noscript>
 <style>
 /* ---------- Tokens ---------- */
 :root{
@@ -42,6 +43,10 @@ button:disabled{cursor:default}
 a{color:inherit}
 img{display:block;max-width:100%}
 :focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+/* light focus ring where the background is dark */
+.room[data-world="bender"] :focus-visible,.room[data-world="stage"] .gallery :focus-visible{outline-color:#fff}
+/* the floating × sits over light and dark: a two-tone ring shows on both */
+.room .room-close:focus-visible{outline:2px solid #fff;outline-offset:1px;box-shadow:0 0 0 5px #000}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
 /* ---------- Pages ---------- */
@@ -326,7 +331,7 @@ textarea{display:block;width:100%;min-height:104px;border:2px solid var(--ink);b
 
       <fieldset class="field">
         <legend class="legend">Time</legend>
-        <div class="chips" id="chips" role="radiogroup" aria-label="Time"></div>
+        <div class="chips" id="chips"></div>
         <div class="other" id="other" hidden>
           <label class="sr" for="otherTime">Pick a time</label>
           <input type="time" id="otherTime" step="900">
@@ -406,7 +411,7 @@ const DOORS = [
     n: 2, world: 'bender', title: 'The Mind-Bender', teaser: 'Now you see me. No',
     plan: 'Museum of Illusions. Upside-down rooms, shrinking rooms, and way too many photos of us looking ridiculous. Then we warm up with coffee at Starbucks near Pike Place, sit by the window, and compare who fell for more illusions.',
     link: { href: 'https://moiseattle.com/', label: 'moiseattle.com ↗' },
-    range: [600, 1200], rangeNote: 'Museum of Illusions is open 10am–9pm (10pm Fri–Sat).',
+    range: [600, 1200], rangeNote: 'Museum of Illusions is open 10am–9pm (10pm Fri–Sat), so start by 8pm.',
     confetti: ['#1c1c1c', '#0c7cb1', '#7fc8ea', '#ffb000'],
     photos: [
       { src: 'img/d2-1.jpg', w: 1024, h: 768, c: '#675993', cap: 'A vortex tunnel', t: 'Vortex Tunnel', by: 'Graeme Pow', url: 'https://www.flickr.com/photos/32280754@N05/26678780085', lic: 'CC BY-NC-SA 2.0', licUrl: 'https://creativecommons.org/licenses/by-nc-sa/2.0/' },
@@ -552,16 +557,28 @@ const TODAY = seattleToday();
 const MIN_DATE = addDays(TODAY, 1);
 const MAX_DATE = addDays(TODAY, 120);
 const S = {
-  page: 1, noAttempts: 0, caved: false,
+  page: 1, noAttempts: 0, caved: false, pressedCaved: false, // caved: NO turned into a yes; pressedCaved: she pressed that one
   unlocked: false, opened: new Set(), puzzles: {},
   chosen: null, date: null, time: null, timeAuto: false, otherMins: null,
-  view: { y: MIN_DATE.y, m: MIN_DATE.m }, sending: false, busy: false
+  view: { y: MIN_DATE.y, m: MIN_DATE.m }, sending: false, busy: false,
+  rid: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12)
 };
 
-/* While the puzzle or a room is open, the page behind can't scroll or take focus. */
-function behindDialog(on) {
+/* Dialogs (the puzzle sheet and the room). `openDialogs` is the truth; the fade-out is only looks.
+   While any is open, the page behind can't scroll or take focus. */
+const openDialogs = new Set();
+const closeTimers = {};
+const focusTimers = {};
+function focusLater(name, pick, ms) { // move focus into a dialog once it has slid in, unless it closed meanwhile
+  clearTimeout(focusTimers[name]);
+  focusTimers[name] = setTimeout(() => { if (openDialogs.has(name)) { const el = pick(); if (el) el.focus({ preventScroll: true }); } }, reduced ? 0 : ms);
+}
+function setDialog(name, open) {
+  if (open) openDialogs.add(name); else openDialogs.delete(name);
+  const on = openDialogs.size > 0, app = $('#app');
   document.body.classList.toggle('is-locked', on);
-  $('#app').inert = on;
+  app.inert = on;
+  if (on) app.setAttribute('aria-hidden', 'true'); else app.removeAttribute('aria-hidden'); // iOS 15.0–15.4 ignore inert
 }
 
 /* ================= Navigation ================= */
@@ -580,8 +597,8 @@ function go(n, push = true) {
 }
 history.replaceState({ page: 1 }, '');
 window.addEventListener('popstate', e => {
-  if (!sheet.hidden) { closeSheet(); history.pushState({ page: S.page }, ''); return; }
-  if (!room.hidden) { closeRoom(); history.pushState({ page: S.page }, ''); return; }
+  if (openDialogs.has('sheet')) { closeSheet(); history.pushState({ page: S.page }, ''); return; }
+  if (openDialogs.has('room')) { closeRoom(); history.pushState({ page: S.page }, ''); return; }
   if (S.page === 4) { history.pushState({ page: 4 }, ''); return; }
   const p = (e.state && e.state.page) || 1;
   go(p === 3 && !S.chosen ? 2 : p, false);
@@ -589,7 +606,7 @@ window.addEventListener('popstate', e => {
 
 /* ================= 1 · YES / NO ================= */
 const yes = $('#yes'), no = $('#no'), ask = $('.p1 .ask');
-let lastEscape = 0;
+let lastEscape = 0, lastTouchEscape = -1e9;
 
 function yesScale() {
   const maxByWidth = (window.innerWidth - 2 * 20) / yes.offsetWidth;
@@ -672,15 +689,17 @@ document.addEventListener('pointermove', e => {
 document.addEventListener('pointerdown', e => {
   if (e.pointerType === 'mouse' || S.page !== 1 || S.caved) return;
   if (e.target.closest && e.target.closest('#yes')) return; // a thumb on YES is a yes, even near NO
-  if (distToNo(e.clientX, e.clientY) < 34) { e.preventDefault(); escapeNo(e.clientX, e.clientY); }
+  if (distToNo(e.clientX, e.clientY) < 34) { e.preventDefault(); lastTouchEscape = performance.now(); escapeNo(e.clientX, e.clientY); }
 }, { passive: false });
 no.addEventListener('click', e => {
-  if (S.caved && no.classList.contains('is-caved')) { go(2); return; }
+  if (S.caved && no.classList.contains('is-caved')) { S.pressedCaved = true; go(2); return; }
   e.preventDefault();
+  // A touch already made NO run on the press; the click when the finger lifts isn't a new try.
+  if (performance.now() - lastTouchEscape < 1500) return;
   const r = no.getBoundingClientRect();
   escapeNo(r.left + r.width / 2, r.top + r.height / 2);
 });
-yes.addEventListener('click', () => go(2));
+yes.addEventListener('click', () => { S.pressedCaved = false; go(2); });
 window.addEventListener('resize', () => {
   if (!no.classList.contains('is-loose')) return;
   const x = Math.min(parseFloat(no.style.left) || 16, window.innerWidth - no.offsetWidth - 16);
@@ -741,7 +760,7 @@ async function swingOpen(n, thenRoom) {
     await wait(S.unlocked ? 120 : 0);
     btn.classList.add('is-open');
     setDoorState(n);
-    if (thenRoom) { await wait(1050); openRoom(n); }
+    if (thenRoom) { await wait(1050); if (S.page === 2) openRoom(n); } // she may have gone back meanwhile
   } finally { S.busy = false; }
 }
 doorsEl.addEventListener('click', e => {
@@ -766,15 +785,17 @@ function openSheet(n) {
   sheetMsg.textContent = '';
   grid.classList.remove('is-solved');
   renderGrid();
+  clearTimeout(closeTimers.sheet);
   sheet.hidden = false;
-  behindDialog(true);
+  setDialog('sheet', true);
   requestAnimationFrame(() => requestAnimationFrame(() => sheet.classList.add('is-in')));
-  setTimeout(() => { const first = grid.querySelector('.cell:not([aria-disabled="true"])'); (first || $('#check')).focus({ preventScroll: true }); }, reduced ? 0 : 380);
+  focusLater('sheet', () => grid.querySelector('.cell:not([aria-disabled="true"])') || $('#check'), 380);
 }
 function closeSheet() {
   sheet.classList.remove('is-in');
-  behindDialog(false);
-  setTimeout(() => { sheet.hidden = true; }, reduced ? 0 : 420);
+  setDialog('sheet', false);
+  clearTimeout(closeTimers.sheet);
+  closeTimers.sheet = setTimeout(() => { if (!openDialogs.has('sheet')) sheet.hidden = true; }, reduced ? 0 : 420);
   if (P && !P.solved) { const b = doorBtn(P.n); if (b) b.focus({ preventScroll: true }); }
 }
 sheet.addEventListener('click', e => { if (e.target.closest('[data-close]')) closeSheet(); });
@@ -846,7 +867,7 @@ async function solved() {
 /* ================= Room ================= */
 const room = $('#room'), roomIn = $('#roomIn');
 function openRoom(n) {
-  if (!room.hidden && room.classList.contains('is-in') && +room.dataset.door === n) return; // already showing
+  if (openDialogs.has('room') && +room.dataset.door === n) return; // already showing
   const D = DOORS[n - 1];
   room.dataset.world = D.world;
   room.dataset.door = n;
@@ -858,7 +879,7 @@ function openRoom(n) {
   roomIn.innerHTML = `
     <p class="room-tag">Door ${n}</p>
     <div class="gallery">
-      <div class="track" id="track" tabindex="0" aria-label="Photos">${shots}</div>
+      <div class="track" id="track" tabindex="0" role="region" aria-label="Photos">${shots}</div>
       <div class="gallery-bar">
         <span class="gallery-cap" id="galCap">${esc(D.photos[0].cap)}</span>
         <span class="gallery-count" id="galCount">1/${D.photos.length}</span>
@@ -892,23 +913,25 @@ function openRoom(n) {
   next.addEventListener('click', () => track.scrollTo({ left: (idx() + 1) * track.clientWidth, behavior: reduced ? 'auto' : 'smooth' }));
   $('#choose').addEventListener('click', () => choose(n));
 
+  clearTimeout(closeTimers.room);
   room.hidden = false;
   room.scrollTop = 0;
-  behindDialog(true);
+  setDialog('room', true);
   requestAnimationFrame(() => requestAnimationFrame(() => room.classList.add('is-in')));
-  setTimeout(() => $('#roomClose').focus({ preventScroll: true }), reduced ? 0 : 300);
+  focusLater('room', () => $('#roomClose'), 300);
 }
 function closeRoom() {
   const n = +room.dataset.door;
   room.classList.remove('is-in');
-  behindDialog(false);
-  setTimeout(() => { room.hidden = true; roomIn.innerHTML = ''; }, reduced ? 0 : 420);
+  setDialog('room', false);
+  clearTimeout(closeTimers.room);
+  closeTimers.room = setTimeout(() => { if (!openDialogs.has('room')) { room.hidden = true; roomIn.innerHTML = ''; } }, reduced ? 0 : 420);
   const b = doorBtn(n); if (b && S.page === 2) b.focus({ preventScroll: true });
 }
 $('#roomClose').addEventListener('click', closeRoom);
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  if (!sheet.hidden) closeSheet(); else if (!room.hidden) closeRoom();
+  if (openDialogs.has('sheet')) closeSheet(); else if (openDialogs.has('room')) closeRoom();
 });
 function choose(n) {
   S.chosen = n;
@@ -927,7 +950,8 @@ function timeFor(kind) {
 }
 function chipLabel(t) {
   if (t.kind === 'golden') {
-    const g = S.date ? goldenStart(S.date.y, S.date.m, S.date.d) : { h: 17, m: 0 };
+    if (!S.date) return 'Golden hour'; // the time depends on the day
+    const g = goldenStart(S.date.y, S.date.m, S.date.d);
     return 'Golden hour (' + fmtTime(g.h, g.m) + ')';
   }
   if (t.kind === 'other') return 'Other time';
@@ -953,12 +977,14 @@ function inRange(mins) { const r = DOORS[S.chosen - 1].range; return mins >= r[0
 
 function renderChips() {
   const D = DOORS[S.chosen - 1];
+  const had = chipsEl.contains(document.activeElement) ? document.activeElement.dataset.kind : null;
   chipsEl.innerHTML = TIMES.map(t => {
     const ok = allowed(t.kind);
     const sel = S.time === t.kind;
     const cls = 'chip' + (sel ? ' is-sel' : '') + (D.suggest === t.kind ? ' is-suggested' : '');
-    return '<button type="button" role="radio" aria-checked="' + sel + '" class="' + cls + '" data-kind="' + t.kind + '"' + (ok ? '' : ' disabled') + '>' + esc(chipLabel(t)) + '</button>';
+    return '<button type="button" aria-pressed="' + sel + '" class="' + cls + '" data-kind="' + t.kind + '"' + (ok ? '' : ' disabled') + '>' + esc(chipLabel(t)) + '</button>';
   }).join('');
+  if (had) { const c = chipsEl.querySelector('[data-kind="' + had + '"]'); if (c && !c.disabled) c.focus({ preventScroll: true }); }
   other.hidden = S.time !== 'other';
   renderNote();
 }
@@ -993,6 +1019,7 @@ otherTime.addEventListener('change', readOtherTime);
 const calGrid = $('#calGrid'), calMonth = $('#calMonth'), calPrev = $('#calPrev'), calNext = $('#calNext');
 function renderCal() {
   const { y, m } = S.view;
+  const had = calGrid.contains(document.activeElement) ? document.activeElement.dataset.d : null;
   calMonth.textContent = MONTHS[m] + ' ' + y;
   const firstDow = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7; // Monday first
   const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
@@ -1007,6 +1034,7 @@ function renderCal() {
   const tail = (7 - (firstDow + days) % 7) % 7;
   for (let i = 0; i < tail; i++) html += '<span aria-hidden="true"></span>';
   calGrid.innerHTML = html;
+  if (had) { const b = calGrid.querySelector('[data-d="' + had + '"]:not([disabled])'); if (b) b.focus({ preventScroll: true }); }
   calPrev.disabled = y * 12 + m <= MIN_DATE.y * 12 + MIN_DATE.m;
   calNext.disabled = y * 12 + m >= MAX_DATE.y * 12 + MAX_DATE.m;
 }
@@ -1015,8 +1043,8 @@ calGrid.addEventListener('click', e => {
   S.date = { y: S.view.y, m: S.view.m, d: +b.dataset.d };
   renderCal(); renderChips(); updateSend();
 });
-calPrev.addEventListener('click', () => { const t = S.view.y * 12 + S.view.m - 1; S.view = { y: Math.floor(t / 12), m: t % 12 }; renderCal(); });
-calNext.addEventListener('click', () => { const t = S.view.y * 12 + S.view.m + 1; S.view = { y: Math.floor(t / 12), m: t % 12 }; renderCal(); });
+calPrev.addEventListener('click', () => { const t = S.view.y * 12 + S.view.m - 1; S.view = { y: Math.floor(t / 12), m: t % 12 }; renderCal(); if (calPrev.disabled) calNext.focus(); });
+calNext.addEventListener('click', () => { const t = S.view.y * 12 + S.view.m + 1; S.view = { y: Math.floor(t / 12), m: t % 12 }; renderCal(); if (calNext.disabled) calPrev.focus(); });
 $('#change').addEventListener('click', () => go(2));
 
 function chosenTime() {
@@ -1032,38 +1060,49 @@ function updateSend() {
 
 /* ================= Send ================= */
 const sendStatus = $('#sendStatus');
+const SEND_ERRORS = {
+  network: 'Didn’t send. Check your connection and try again.',
+  server: 'Didn’t send. Try again in a minute.',
+  busy: 'Didn’t send. Too many tries, wait a few minutes.'
+};
+// 'ok' | 'server' | 'busy' when the server answered; throws when it couldn't be reached
 async function post(payload) {
   const ctrl = 'AbortController' in window ? new AbortController() : null;
   const timer = ctrl && setTimeout(() => ctrl.abort(), 25000);
   try {
     const res = await fetch('/api/reply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: ctrl ? ctrl.signal : undefined });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return true;
+    return res.ok ? 'ok' : res.status === 429 ? 'busy' : 'server';
   } finally { if (timer) clearTimeout(timer); }
 }
 sendBtn.addEventListener('click', async () => {
   const t = chosenTime(); if (!S.date || !t || S.sending) return;
+  const day = { y: S.date.y, m: S.date.m, d: S.date.d }; // what is sent is what page 4 will say
   const D = DOORS[S.chosen - 1];
   const kind = TIMES.find(x => x.kind === S.time);
-  const g = S.time === 'golden' ? goldenStart(S.date.y, S.date.m, S.date.d) : null;
+  const g = S.time === 'golden' ? goldenStart(day.y, day.m, day.d) : null;
   const payload = {
     door: D.n, doorName: D.title, plan: D.plan,
-    dateISO: iso(S.date), dateText: dateText(S.date, true),
+    dateISO: iso(day),
     timeText: fmtTime(t.h, t.m), timeLabel: kind ? kind.name : '',
     sunsetText: g ? fmtTime(g.sunset.h, g.sunset.m) : null,
     note: Array.from($('#note').value.trim()).slice(0, 600).join(''), // by characters, never splitting an emoji
-    noAttempts: S.noAttempts, caved: S.caved, website: ''
+    noAttempts: S.noAttempts, caved: S.pressedCaved, rid: S.rid
   };
   S.sending = true; updateSend();
   sendBtn.textContent = 'Sending…'; sendStatus.textContent = '';
-  let ok = false;
-  for (let attempt = 0; attempt < 2 && !ok; attempt++) {
-    try { ok = await post(payload); } catch (err) { if (attempt === 0) await new Promise(r => setTimeout(r, 1500)); }
+  // Retry once only when the server couldn't be reached. If it answered with an error, retrying
+  // won't help (and the answer id stops a duplicate email if a lost reply was actually sent).
+  let outcome = 'network';
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try { outcome = await post(payload); break; } catch (err) {
+      outcome = 'network';
+      if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
+    }
   }
   S.sending = false;
   sendBtn.textContent = 'Send it';
-  if (!ok) { updateSend(); sendStatus.textContent = 'Didn’t send. Check your connection and try again.'; return; }
-  $('#see').textContent = 'See you on ' + dateText(S.date) + ' at ' + fmtTime(t.h, t.m) + '.';
+  if (outcome !== 'ok') { updateSend(); sendStatus.textContent = SEND_ERRORS[outcome]; return; }
+  $('#see').textContent = 'See you on ' + dateText(day) + ' at ' + fmtTime(t.h, t.m) + '.';
   go(4);
 });
 

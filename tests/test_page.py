@@ -80,6 +80,17 @@ def test_text_colors_are_readable():
     assert contrast("#000000", pink) >= 4.5
 
 
+def test_photo_strip_is_announced_as_a_region():
+    assert re.search(r'<div class="track"[^>]*role="region"[^>]*aria-label="Photos"', SCRIPT)
+
+
+def test_door_two_font_does_not_hold_up_the_first_paint():
+    # Clash Display is only used in Door 2's room; if its host is slow, page 1 must still appear.
+    link = re.search(r'<link[^>]+api\.fontshare\.com[^>]*>', INDEX).group(0)
+    assert 'media="print"' in link and "onload=\"this.media='all'\"" in link
+    assert re.search(r"<noscript><link[^>]+api\.fontshare\.com", INDEX)
+
+
 def test_every_referenced_photo_exists():
     for path in set(re.findall(r"img/[\w-]+\.jpg", INDEX)):
         assert (ROOT / "web" / path).is_file(), path
@@ -123,6 +134,11 @@ def test_page_sends_exactly_the_fields_the_backend_expects():
     block = SCRIPT.split("const payload = {")[1].split("};")[0]
     sent = set(re.findall(r"(?:^|[\s,{])([A-Za-z]+):\s", block))
     assert sent == set(main.Reply.model_fields), sent ^ set(main.Reply.model_fields)
+
+
+def test_server_knows_the_same_door_names_as_the_page():
+    titles = re.findall(r"n: (\d), world: '\w+', title: '([^']+)'", SCRIPT)
+    assert {int(n): t for n, t in titles} == main.DOOR_TITLES
 
 
 def test_note_limit_is_the_same_on_both_sides():
