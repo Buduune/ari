@@ -1063,15 +1063,27 @@ const sendStatus = $('#sendStatus');
 const SEND_ERRORS = {
   network: 'Didn’t send. Check your connection and try again.',
   server: 'Didn’t send. Try again in a minute.',
-  busy: 'Didn’t send. Too many tries, wait a few minutes.'
+  busy: 'Didn’t send. Too many tries, wait a few minutes.',
+  // Setup problems name themselves, so they get fixed before she ever meets one.
+  setup: 'Didn’t send. Email isn’t set up on the server.',
+  login: 'Didn’t send. Gmail refused the login.',
+  unreachable: 'Didn’t send. The server can’t reach Gmail.',
+  noserver: 'Didn’t send. There’s no server behind this page.',
+  rejected: 'Didn’t send. The server didn’t accept the answer.'
 };
-// 'ok' | 'server' | 'busy' when the server answered; throws when it couldn't be reached
+const SEND_REASONS = { not_configured: 'setup', gmail_login: 'login', gmail_unreachable: 'unreachable' };
+// A SEND_ERRORS key (or 'ok') when the server answered; throws when it couldn't be reached
 async function post(payload) {
   const ctrl = 'AbortController' in window ? new AbortController() : null;
   const timer = ctrl && setTimeout(() => ctrl.abort(), 25000);
   try {
     const res = await fetch('/api/reply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: ctrl ? ctrl.signal : undefined });
-    return res.ok ? 'ok' : res.status === 429 ? 'busy' : 'server';
+    if (res.ok) return 'ok';
+    if (res.status === 429) return 'busy';
+    if (res.status === 422) return 'rejected';
+    if ([404, 405, 501].includes(res.status)) return 'noserver'; // a plain file host answered, not main.py
+    const reason = await res.json().then(j => j && j.reason, () => '');
+    return SEND_REASONS[reason] || 'server';
   } finally { if (timer) clearTimeout(timer); }
 }
 sendBtn.addEventListener('click', async () => {

@@ -18,6 +18,7 @@ import smtplib
 import ssl
 import threading
 import time
+import unicodedata
 from collections import OrderedDict
 from datetime import date, datetime, timedelta, timezone
 from email.message import EmailMessage
@@ -26,7 +27,7 @@ from html import escape
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -226,7 +227,7 @@ def send_gmail(msg: EmailMessage, user: str, app_password: str) -> None:
     context = ssl.create_default_context()
     smtp = smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=20)
     try:
-        smtp.login(user, app_password.replace(" ", ""))
+        smtp.login(user, app_password)
         smtp.send_message(msg)
     finally:
         # Once Gmail has accepted the message, a bad goodbye must not turn it into a failure
@@ -237,25 +238,48 @@ def send_gmail(msg: EmailMessage, user: str, app_password: str) -> None:
             smtp.close()
 
 
+def _clean(value: str) -> str:
+    """Drops spaces and the invisible characters a copy-paste can bring along (non-breaking,
+    zero-width…). Gmail addresses and app passwords never contain them, and smtplib can't send them."""
+    return "".join(ch for ch in value if not ch.isspace() and unicodedata.category(ch) != "Cf")
+
+
 def _email_settings() -> tuple[bool, str, str, str]:
     """(dry_run, sender, app password, recipient) from the environment, blanks treated as missing."""
-    sender = os.environ.get("GMAIL_ADDRESS", "").strip()
-    password = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
-    to = os.environ.get("MAIL_TO", "").strip() or sender
+    sender = _clean(os.environ.get("GMAIL_ADDRESS", ""))
+    password = _clean(os.environ.get("GMAIL_APP_PASSWORD", ""))
+    to = _clean(os.environ.get("MAIL_TO", "")) or sender
     return os.environ.get("DRY_RUN") == "1", sender, password, to
 
 
-@app.post("/api/reply")
-def reply(r: Reply, request: Request) -> dict:
+def _why_not_sent(exc: BaseException) -> str:
+    """A short name for why Gmail didn't take the email (SMTPException is itself an OSError)."""
+    if isinstance(exc, (smtplib.SMTPAuthenticationError, UnicodeError)):
+        # Wrong address / app password, or 2-Step Verification off. UnicodeError: smtplib logs in
+        # with ASCII only, so a password with other letters can never be the 16-letter app password.
+        return "gmail_login"
+    if isinstance(exc, smtplib.SMTPConnectError) or (
+            isinstance(exc, OSError) and not isinstance(exc, smtplib.SMTPException)):
+        return "gmail_unreachable"  # no connection: mail port blocked, no network, DNS, TLS
+    return "gmail_failed"           # anything else; often temporary
+
+
+def _refuse(status: int, reason: str, detail: str) -> JSONResponse:
+    """An error reply with a short reason, which the page turns into a message that says what's wrong."""
+    return JSONResponse(status_code=status, content={"detail": detail, "reason": reason})
+
+
+@app.post("/api/reply", response_model=None)
+def reply(r: Reply, request: Request) -> dict | JSONResponse:
     dry_run, sender, password, to = _email_settings()
 
     if not dry_run and not (sender and password):
         log.error("GMAIL_ADDRESS / GMAIL_APP_PASSWORD are not set")
-        raise HTTPException(status_code=500, detail="Email is not set up yet.")
+        return _refuse(500, "not_configured", "Email is not set up yet.")
     if _already_sent(r.rid):
         return {"ok": True}
     if not _allow_send(_sender_of(request)):
-        raise HTTPException(status_code=429, detail="Too many replies. Try again in a few minutes.")
+        return _refuse(429, "busy", "Too many replies. Try again in a few minutes.")
 
     msg = build_message(r, sender or "dry-run@example.com", to or "dry-run@example.com")
     if dry_run:
@@ -264,9 +288,9 @@ def reply(r: Reply, request: Request) -> dict:
 
     try:
         send_gmail(msg, sender, password)
-    except (smtplib.SMTPException, OSError) as exc:
+    except (smtplib.SMTPException, OSError, UnicodeError) as exc:
         log.exception("Gmail send failed: %s", exc)
-        raise HTTPException(status_code=502, detail="Couldn't send the email.") from exc
+        return _refuse(502, _why_not_sent(exc), "Couldn't send the email.")
     _remember_sent(r.rid)
     return {"ok": True}
 

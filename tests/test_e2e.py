@@ -25,13 +25,13 @@ PHONE = dict(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_m
 
 # --- fixtures -----------------------------------------------------------------
 
-@pytest.fixture(scope="session")
-def server():
+def _serve(settings):
+    """Runs main.py under uvicorn on a free port with only the given email settings; yields its URL."""
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    env = {k: v for k, v in os.environ.items() if k not in ("GMAIL_ADDRESS", "GMAIL_APP_PASSWORD", "MAIL_TO")}
-    env["DRY_RUN"] = "1"
+    env = {k: v for k, v in os.environ.items() if k not in ("GMAIL_ADDRESS", "GMAIL_APP_PASSWORD", "MAIL_TO", "DRY_RUN")}
+    env.update(settings)
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", str(port), "--log-level", "warning"],
         cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -55,6 +55,18 @@ def server():
 
 
 @pytest.fixture(scope="session")
+def server():
+    """The real backend in DRY_RUN: answers are logged instead of emailed."""
+    yield from _serve({"DRY_RUN": "1"})
+
+
+@pytest.fixture(scope="session")
+def bare_server():
+    """The real backend with no Gmail settings, like a fresh deploy before they're added."""
+    yield from _serve({})
+
+
+@pytest.fixture(scope="session")
 def browser():
     with sync_api.sync_playwright() as p:
         try:
@@ -65,17 +77,26 @@ def browser():
         b.close()
 
 
-@pytest.fixture
-def page(browser, server):
+def _phone_page(browser, base):
     ctx = browser.new_context(**PHONE)
     pg = ctx.new_page()
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
-    pg.goto(server + "/", wait_until="load")
+    pg.goto(base + "/", wait_until="load")
     pg.wait_for_function("() => !!window.__invite")
     yield pg
     ctx.close()
     assert errors == [], f"JavaScript errors on the page: {errors}"
+
+
+@pytest.fixture
+def page(browser, server):
+    yield from _phone_page(browser, server)
+
+
+@pytest.fixture
+def bare_page(browser, bare_server):
+    yield from _phone_page(browser, bare_server)
 
 
 # --- helpers ------------------------------------------------------------------
@@ -571,17 +592,38 @@ def _send_with(page, handler):
     return calls
 
 
-@pytest.mark.parametrize("status,message", [
-    (500, "Didn’t send. Try again in a minute."),
-    (502, "Didn’t send. Try again in a minute."),
-    (429, "Didn’t send. Too many tries, wait a few minutes."),
+@pytest.mark.parametrize("status,body,message", [
+    # Setup problems say what's wrong, so you can fix them before she ever sees one.
+    (500, '{"reason": "not_configured"}', "Didn’t send. Email isn’t set up on the server."),
+    (502, '{"reason": "gmail_login"}', "Didn’t send. Gmail refused the login."),
+    (502, '{"reason": "gmail_unreachable"}', "Didn’t send. The server can’t reach Gmail."),
+    (404, '{"detail": "Not Found"}', "Didn’t send. There’s no server behind this page."),     # static host, Live Server
+    (405, "", "Didn’t send. There’s no server behind this page."),
+    (501, "Unsupported method ('POST')", "Didn’t send. There’s no server behind this page."),  # python -m http.server
+    (422, '{"detail": "Invalid answer."}', "Didn’t send. The server didn’t accept the answer."),
+    # Passing trouble.
+    (502, '{"reason": "gmail_failed"}', "Didn’t send. Try again in a minute."),
+    (500, "Internal Server Error", "Didn’t send. Try again in a minute."),
+    (504, "", "Didn’t send. Try again in a minute."),
+    (429, '{"reason": "busy"}', "Didn’t send. Too many tries, wait a few minutes."),
 ])
-def test_server_error_is_not_retried_and_says_so(page, status, message):
-    calls = _send_with(page, lambda route: route.fulfill(status=status, body="{}"))
+def test_server_error_is_not_retried_and_says_what_went_wrong(page, status, body, message):
+    calls = _send_with(page, lambda route: route.fulfill(status=status, body=body))
     assert len(calls) == 1                                 # retrying a server error could email twice
     assert page.locator("#sendStatus").inner_text() == message
     assert state(page, "page") == 3
     assert page.locator("#send").is_enabled()
+
+
+def test_a_server_without_gmail_settings_says_so_on_the_page(bare_page):
+    # What you'd see testing a fresh deploy, or a local run, before the Gmail settings are in.
+    choose_door(bare_page, 2)
+    pick_first_open_day(bare_page)
+    bare_page.locator('.chip[data-kind="evening"]').tap()
+    bare_page.locator("#send").tap()
+    bare_page.wait_for_function("() => document.querySelector('#sendStatus').textContent.length > 0", timeout=10000)
+    assert bare_page.locator("#sendStatus").inner_text() == "Didn’t send. Email isn’t set up on the server."
+    assert state(bare_page, "page") == 3
 
 
 def test_lost_connection_is_retried_once_then_explained(page):

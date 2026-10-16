@@ -3,6 +3,7 @@
 import json
 import re
 import smtplib
+import socket
 from datetime import date, timedelta
 
 import pytest
@@ -61,6 +62,11 @@ def test_missing_email_settings_is_an_error_not_a_fake_success(api):
     assert r.status_code == 500
 
 
+def test_missing_email_settings_are_named_as_the_reason(api):
+    # So the page can tell you what's wrong instead of "try again in a minute".
+    assert api.post("/api/reply", json=make_payload()).json()["reason"] == "not_configured"
+
+
 def test_sends_through_gmail_over_ssl(api, gmail):
     r = api.post("/api/reply", json=make_payload())
     assert r.status_code == 200 and r.json() == {"ok": True}
@@ -71,6 +77,16 @@ def test_sends_through_gmail_over_ssl(api, gmail):
     assert msg["Subject"] == "She said yes"
     assert msg["From"] == "me@example.com"
     assert msg["To"] == "me@example.com"
+
+
+def test_invisible_characters_pasted_into_the_settings_are_dropped(api, gmail, monkeypatch):
+    # A copy-paste can bring non-breaking or zero-width spaces along; smtplib crashed on them.
+    monkeypatch.setenv("GMAIL_ADDRESS", "me@example.com​")
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "abcd efgh ijkl mnop\n")
+    r = api.post("/api/reply", json=make_payload())
+    assert r.status_code == 200
+    assert gmail.logins == [("me@example.com", "abcdefghijklmnop")]
+    assert gmail.sent[0]["From"] == "me@example.com"
 
 
 def test_mail_to_overrides_the_recipient(api, gmail, monkeypatch):
@@ -211,6 +227,35 @@ def test_gmail_failure_is_reported(api, gmail):
     gmail.fail = smtplib.SMTPAuthenticationError(535, b"Username and Password not accepted")
     r = api.post("/api/reply", json=make_payload())
     assert r.status_code == 502
+
+
+def test_gmail_refusing_the_login_is_named_as_the_reason(api, gmail):
+    # Wrong app password, a normal password instead of an app password, or 2-Step Verification off.
+    gmail.fail = smtplib.SMTPAuthenticationError(535, b"5.7.8 Username and Password not accepted")
+    r = api.post("/api/reply", json=make_payload())
+    assert r.status_code == 502
+    assert r.json()["reason"] == "gmail_login"
+
+
+def test_a_password_gmail_could_never_take_is_a_login_problem_not_a_crash(api, gmail, monkeypatch):
+    # e.g. a normal password with Cyrillic letters where the 16-letter app password should be
+    monkeypatch.setenv("GMAIL_APP_PASSWORD", "Нууц үг 2026")
+    r = api.post("/api/reply", json=make_payload())
+    assert r.status_code == 502
+    assert r.json()["reason"] == "gmail_login"
+    assert gmail.sent == []
+
+
+@pytest.mark.parametrize("cause", [
+    TimeoutError("timed out"),                            # the host blocks mail ports
+    ConnectionRefusedError(111, "Connection refused"),
+    socket.gaierror(-3, "Temporary failure in name resolution"),
+])
+def test_gmail_out_of_reach_is_named_as_the_reason(api, gmail, cause):
+    gmail.connect_fail = cause
+    r = api.post("/api/reply", json=make_payload())
+    assert r.status_code == 502
+    assert r.json()["reason"] == "gmail_unreachable"
 
 
 def test_odd_goodbye_after_gmail_took_the_email_still_counts_as_sent(api, gmail):

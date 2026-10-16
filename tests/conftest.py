@@ -54,7 +54,7 @@ def gmail(api, monkeypatch):
     """Replaces Gmail with a fake SMTP server and records what would be sent.
 
     Depends on `api` so the email settings below are applied after the reset."""
-    box = SimpleNamespace(sent=[], logins=[], host=None, timeout=None, fail=None, quit_reply=221)
+    box = SimpleNamespace(sent=[], logins=[], host=None, timeout=None, fail=None, connect_fail=None, quit_reply=221)
 
     class FakeSMTP:
         """Behaves like smtplib.SMTP_SSL, including what its `with` block does on exit."""
@@ -62,6 +62,8 @@ def gmail(api, monkeypatch):
         def __init__(self, host, port, context=None, timeout=None):
             box.host = (host, port)
             box.timeout = timeout
+            if box.connect_fail:  # smtplib connects in the constructor
+                raise box.connect_fail
 
         def __enter__(self):
             return self
@@ -84,6 +86,7 @@ def gmail(api, monkeypatch):
         def login(self, user, password):
             if box.fail:
                 raise box.fail
+            f"\0{user}\0{password}".encode("ascii")  # like smtplib's AUTH: ASCII only, else UnicodeEncodeError
             box.logins.append((user, password))
 
         def send_message(self, msg):
