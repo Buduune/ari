@@ -666,10 +666,12 @@ function distToNo(x, y) {
 }
 document.addEventListener('pointermove', e => {
   if (e.pointerType !== 'mouse' || S.page !== 1 || S.caved) return;
+  if (e.target.closest && e.target.closest('#yes')) return; // hovering YES isn't going for NO
   if (distToNo(e.clientX, e.clientY) < 46) escapeNo(e.clientX, e.clientY);
 }, { passive: true });
 document.addEventListener('pointerdown', e => {
   if (e.pointerType === 'mouse' || S.page !== 1 || S.caved) return;
+  if (e.target.closest && e.target.closest('#yes')) return; // a thumb on YES is a yes, even near NO
   if (distToNo(e.clientX, e.clientY) < 34) { e.preventDefault(); escapeNo(e.clientX, e.clientY); }
 }, { passive: false });
 no.addEventListener('click', e => {

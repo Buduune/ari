@@ -152,6 +152,32 @@ def test_yes_goes_straight_to_the_doors(page):
     assert state(page, "noAttempts") == 0
 
 
+def test_tapping_the_edge_of_yes_is_a_yes_not_a_no(page):
+    # YES and NO sit 12px apart; a thumb on YES's right edge must not count as trying NO.
+    yes = rect(page, "#yes")
+    page.touchscreen.tap(yes["r"] - 4, yes["t"] + yes["h"] / 2)
+    page.wait_for_selector("#p2.is-active", timeout=3000)
+    assert state(page, "noAttempts") == 0
+
+
+def test_mouse_over_yes_does_not_scare_no(browser, server):
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    try:
+        pg = ctx.new_page()
+        pg.goto(server + "/", wait_until="load")
+        yes = rect(pg, "#yes")
+        pg.mouse.move(yes["l"] + 10, yes["t"] + 10)
+        pg.mouse.move(yes["r"] - 3, yes["t"] + yes["h"] / 2, steps=8)
+        pg.wait_for_timeout(300)
+        assert pg.evaluate("() => window.__invite.S.noAttempts") == 0
+        no = rect(pg, "#no")
+        pg.mouse.move(no["l"] + 5, no["t"] + no["h"] / 2, steps=6)   # actually going for NO
+        pg.wait_for_timeout(300)
+        assert pg.evaluate("() => window.__invite.S.noAttempts") == 1
+    finally:
+        ctx.close()
+
+
 def test_no_runs_away_shrinks_and_gives_in_after_five(page):
     widths, yes_widths = [rect(page, "#no")["w"]], [rect(page, "#yes")["w"]]
     for _ in range(5):
